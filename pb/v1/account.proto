@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package v1;
+
+import "google/protobuf/empty.proto";
+
+service Account {
+  rpc Unlock(UnlockAccountRequest) returns (google.protobuf.Empty) {}
+  rpc Lock(LockAccountRequest) returns (google.protobuf.Empty) {}
+}
+
+message UnlockAccountRequest {
+  string account = 1;
+  bytes passphrase = 2;
+}
+
+message LockAccountRequest {
+  string account = 1;
+}

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package v1;
+
+import "google/protobuf/empty.proto";
+
+service Wallet {
+  rpc Unlock(UnlockWalletRequest) returns (google.protobuf.Empty) {}
+  rpc Lock(LockWalletRequest) returns (google.protobuf.Empty) {}
+}
+
+message UnlockWalletRequest {
+  string wallet = 1;
+  bytes passphrase = 2;
+}
+
+message LockWalletRequest {
+  string wallet = 1;
+}

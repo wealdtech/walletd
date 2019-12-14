@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package v1;
+
+service Sign {
+  rpc SignRaw(SignRawRequest) returns (SignRawResponse) { }
+}
+
+message SignRawRequest {
+  string account = 1;
+  bytes data = 2;
+  uint64 domain = 3;
+}
+
+message SignRawResponse {
+  bytes signature = 1;
+}
