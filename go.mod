@@ -13,6 +13,7 @@ require (
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/viper v1.6.1
 	github.com/stretchr/testify v1.4.0
+	github.com/wealdtech/go-eth2-types v1.0.0
 	github.com/wealdtech/go-eth2-wallet v1.7.0
 	github.com/wealdtech/go-eth2-wallet-encryptor-keystorev4 v1.0.0
 	github.com/wealdtech/go-eth2-wallet-hd v1.8.0
@@ -20,10 +21,7 @@ require (
 	github.com/wealdtech/go-eth2-wallet-store-s3 v1.4.0
 	github.com/wealdtech/go-eth2-wallet-store-scratch v1.2.0
 	github.com/wealdtech/go-eth2-wallet-types v1.7.0
-	github.com/wealdtech/go-grpcserver v0.0.0-00010101000000-000000000000
 	google.golang.org/genproto v0.0.0-20191206224255-0243a4be9c8f
 	google.golang.org/grpc v1.25.1
 	gopkg.in/yaml.v2 v2.2.7 // indirect
 )
-
-replace github.com/wealdtech/go-grpcserver => ../go-grpcserver

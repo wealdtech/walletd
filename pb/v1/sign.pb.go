@@ -79,39 +79,165 @@ func (m *SignRawRequest) GetDomain() uint64 {
 	return 0
 }
 
-type SignRawResponse struct {
+type SignAttestationRequest struct {
+	Account              string   `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
+	Epoch                uint64   `protobuf:"varint,2,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	ForkVersion          []byte   `protobuf:"bytes,3,opt,name=fork_version,json=forkVersion,proto3" json:"fork_version,omitempty"`
+	Root                 []byte   `protobuf:"bytes,4,opt,name=root,proto3" json:"root,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SignAttestationRequest) Reset()         { *m = SignAttestationRequest{} }
+func (m *SignAttestationRequest) String() string { return proto.CompactTextString(m) }
+func (*SignAttestationRequest) ProtoMessage()    {}
+func (*SignAttestationRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3feb3e12a3dc7fb1, []int{1}
+}
+
+func (m *SignAttestationRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SignAttestationRequest.Unmarshal(m, b)
+}
+func (m *SignAttestationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SignAttestationRequest.Marshal(b, m, deterministic)
+}
+func (m *SignAttestationRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignAttestationRequest.Merge(m, src)
+}
+func (m *SignAttestationRequest) XXX_Size() int {
+	return xxx_messageInfo_SignAttestationRequest.Size(m)
+}
+func (m *SignAttestationRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignAttestationRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SignAttestationRequest proto.InternalMessageInfo
+
+func (m *SignAttestationRequest) GetAccount() string {
+	if m != nil {
+		return m.Account
+	}
+	return ""
+}
+
+func (m *SignAttestationRequest) GetEpoch() uint64 {
+	if m != nil {
+		return m.Epoch
+	}
+	return 0
+}
+
+func (m *SignAttestationRequest) GetForkVersion() []byte {
+	if m != nil {
+		return m.ForkVersion
+	}
+	return nil
+}
+
+func (m *SignAttestationRequest) GetRoot() []byte {
+	if m != nil {
+		return m.Root
+	}
+	return nil
+}
+
+type SignBlockRequest struct {
+	Account              string   `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
+	Epoch                uint64   `protobuf:"varint,2,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	ForkVersion          []byte   `protobuf:"bytes,3,opt,name=fork_version,json=forkVersion,proto3" json:"fork_version,omitempty"`
+	Root                 []byte   `protobuf:"bytes,4,opt,name=root,proto3" json:"root,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SignBlockRequest) Reset()         { *m = SignBlockRequest{} }
+func (m *SignBlockRequest) String() string { return proto.CompactTextString(m) }
+func (*SignBlockRequest) ProtoMessage()    {}
+func (*SignBlockRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3feb3e12a3dc7fb1, []int{2}
+}
+
+func (m *SignBlockRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SignBlockRequest.Unmarshal(m, b)
+}
+func (m *SignBlockRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SignBlockRequest.Marshal(b, m, deterministic)
+}
+func (m *SignBlockRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignBlockRequest.Merge(m, src)
+}
+func (m *SignBlockRequest) XXX_Size() int {
+	return xxx_messageInfo_SignBlockRequest.Size(m)
+}
+func (m *SignBlockRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignBlockRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SignBlockRequest proto.InternalMessageInfo
+
+func (m *SignBlockRequest) GetAccount() string {
+	if m != nil {
+		return m.Account
+	}
+	return ""
+}
+
+func (m *SignBlockRequest) GetEpoch() uint64 {
+	if m != nil {
+		return m.Epoch
+	}
+	return 0
+}
+
+func (m *SignBlockRequest) GetForkVersion() []byte {
+	if m != nil {
+		return m.ForkVersion
+	}
+	return nil
+}
+
+func (m *SignBlockRequest) GetRoot() []byte {
+	if m != nil {
+		return m.Root
+	}
+	return nil
+}
+
+type SignResponse struct {
 	Signature            []byte   `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *SignRawResponse) Reset()         { *m = SignRawResponse{} }
-func (m *SignRawResponse) String() string { return proto.CompactTextString(m) }
-func (*SignRawResponse) ProtoMessage()    {}
-func (*SignRawResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3feb3e12a3dc7fb1, []int{1}
+func (m *SignResponse) Reset()         { *m = SignResponse{} }
+func (m *SignResponse) String() string { return proto.CompactTextString(m) }
+func (*SignResponse) ProtoMessage()    {}
+func (*SignResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3feb3e12a3dc7fb1, []int{3}
 }
 
-func (m *SignRawResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_SignRawResponse.Unmarshal(m, b)
+func (m *SignResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SignResponse.Unmarshal(m, b)
 }
-func (m *SignRawResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_SignRawResponse.Marshal(b, m, deterministic)
+func (m *SignResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SignResponse.Marshal(b, m, deterministic)
 }
-func (m *SignRawResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SignRawResponse.Merge(m, src)
+func (m *SignResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignResponse.Merge(m, src)
 }
-func (m *SignRawResponse) XXX_Size() int {
-	return xxx_messageInfo_SignRawResponse.Size(m)
+func (m *SignResponse) XXX_Size() int {
+	return xxx_messageInfo_SignResponse.Size(m)
 }
-func (m *SignRawResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_SignRawResponse.DiscardUnknown(m)
+func (m *SignResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_SignRawResponse proto.InternalMessageInfo
+var xxx_messageInfo_SignResponse proto.InternalMessageInfo
 
-func (m *SignRawResponse) GetSignature() []byte {
+func (m *SignResponse) GetSignature() []byte {
 	if m != nil {
 		return m.Signature
 	}
@@ -120,24 +246,33 @@ func (m *SignRawResponse) GetSignature() []byte {
 
 func init() {
 	proto.RegisterType((*SignRawRequest)(nil), "v1.SignRawRequest")
-	proto.RegisterType((*SignRawResponse)(nil), "v1.SignRawResponse")
+	proto.RegisterType((*SignAttestationRequest)(nil), "v1.SignAttestationRequest")
+	proto.RegisterType((*SignBlockRequest)(nil), "v1.SignBlockRequest")
+	proto.RegisterType((*SignResponse)(nil), "v1.SignResponse")
 }
 
 func init() { proto.RegisterFile("sign.proto", fileDescriptor_3feb3e12a3dc7fb1) }
 
 var fileDescriptor_3feb3e12a3dc7fb1 = []byte{
-	// 173 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0xe2, 0x2a, 0xce, 0x4c, 0xcf,
-	0xd3, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x2a, 0x33, 0x54, 0x0a, 0xe3, 0xe2, 0x0b, 0x06,
-	0x8a, 0x04, 0x25, 0x96, 0x07, 0xa5, 0x16, 0x96, 0xa6, 0x16, 0x97, 0x08, 0x49, 0x70, 0xb1, 0x27,
-	0x26, 0x27, 0xe7, 0x97, 0xe6, 0x95, 0x48, 0x30, 0x2a, 0x30, 0x6a, 0x70, 0x06, 0xc1, 0xb8, 0x42,
-	0x42, 0x5c, 0x2c, 0x29, 0x89, 0x25, 0x89, 0x12, 0x4c, 0x40, 0x61, 0x9e, 0x20, 0x30, 0x5b, 0x48,
-	0x8c, 0x8b, 0x2d, 0x25, 0x3f, 0x37, 0x31, 0x33, 0x4f, 0x82, 0x19, 0x28, 0xca, 0x12, 0x04, 0xe5,
-	0x29, 0xe9, 0x73, 0xf1, 0xc3, 0xcd, 0x2d, 0x2e, 0xc8, 0xcf, 0x2b, 0x4e, 0x15, 0x92, 0xe1, 0xe2,
-	0x04, 0x59, 0x9e, 0x58, 0x52, 0x5a, 0x94, 0x0a, 0x36, 0x9a, 0x27, 0x08, 0x21, 0x60, 0x64, 0xc3,
-	0xc5, 0x02, 0xd2, 0x20, 0x64, 0xc2, 0xc5, 0x0e, 0xd5, 0x28, 0x24, 0xa4, 0x57, 0x66, 0xa8, 0x87,
-	0xea, 0x3a, 0x29, 0x61, 0x14, 0x31, 0x88, 0xc9, 0x4a, 0x0c, 0x49, 0x6c, 0x60, 0x1f, 0x19, 0x03,
-	0x02, 0x00, 0x00, 0xff, 0xff, 0x57, 0xa9, 0x62, 0x43, 0xdf, 0x00, 0x00, 0x00,
+	// 282 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xbc, 0x92, 0x4d, 0x4e, 0xc3, 0x30,
+	0x10, 0x85, 0x69, 0x09, 0xad, 0x32, 0x44, 0x50, 0x8d, 0xaa, 0xca, 0xaa, 0x58, 0x40, 0x56, 0x2c,
+	0x50, 0xa4, 0x80, 0x38, 0x40, 0x39, 0x82, 0x91, 0xba, 0x45, 0x26, 0x35, 0x10, 0x15, 0x3c, 0xc1,
+	0x76, 0x82, 0x58, 0x71, 0x28, 0x2e, 0x88, 0xed, 0x24, 0xe5, 0xaf, 0x12, 0x3b, 0x76, 0x33, 0x9f,
+	0xc6, 0xef, 0x8d, 0xde, 0x18, 0xc0, 0x94, 0xf7, 0x2a, 0xab, 0x34, 0x59, 0xc2, 0x61, 0x93, 0xa7,
+	0x4b, 0x38, 0xb8, 0x76, 0x84, 0x8b, 0x17, 0x2e, 0x9f, 0x6b, 0x69, 0x2c, 0x32, 0x18, 0x8b, 0xa2,
+	0xa0, 0x5a, 0x59, 0x36, 0x38, 0x1e, 0x9c, 0xc6, 0xbc, 0x6f, 0x11, 0x21, 0x5a, 0x09, 0x2b, 0xd8,
+	0xd0, 0xe1, 0x84, 0x87, 0x1a, 0x67, 0x30, 0x5a, 0xd1, 0x93, 0x28, 0x15, 0xdb, 0x75, 0x34, 0xe2,
+	0x5d, 0x97, 0xbe, 0xc1, 0xcc, 0xeb, 0x2e, 0xac, 0x75, 0x9a, 0xc2, 0x96, 0xa4, 0xfe, 0xd6, 0x9f,
+	0xc2, 0x9e, 0xac, 0xa8, 0x78, 0x08, 0x06, 0x11, 0x6f, 0x1b, 0x3c, 0x81, 0xe4, 0x8e, 0xf4, 0xfa,
+	0xa6, 0x91, 0xda, 0x38, 0x99, 0xe0, 0x93, 0xf0, 0x7d, 0xcf, 0x96, 0x2d, 0xf2, 0x8b, 0x69, 0x22,
+	0xcb, 0xa2, 0x76, 0x31, 0x5f, 0xa7, 0xaf, 0x30, 0xf1, 0x0b, 0x5c, 0x3d, 0x52, 0xb1, 0xfe, 0x67,
+	0xeb, 0x33, 0x48, 0x42, 0xa6, 0xd2, 0x54, 0xa4, 0x8c, 0xc4, 0x23, 0x88, 0x7d, 0xea, 0xc2, 0xd6,
+	0x5a, 0x06, 0xe3, 0x84, 0x7f, 0x82, 0xf3, 0xf7, 0x01, 0x44, 0x7e, 0x1c, 0x73, 0x18, 0x77, 0xa7,
+	0x40, 0xcc, 0x9a, 0x3c, 0xfb, 0x7e, 0x97, 0xf9, 0x64, 0xc3, 0x3a, 0xdd, 0x74, 0x07, 0x17, 0x70,
+	0xf8, 0x23, 0x65, 0x9c, 0xf7, 0x63, 0xbf, 0xa3, 0xdf, 0x2a, 0x71, 0x09, 0xf1, 0x26, 0x27, 0x9c,
+	0xf6, 0x03, 0x5f, 0x63, 0xdb, 0xf6, 0xec, 0x76, 0x14, 0xbe, 0xd0, 0xc5, 0x47, 0x00, 0x00, 0x00,
+	0xff, 0xff, 0x76, 0x9f, 0x80, 0x24, 0x50, 0x02, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -152,7 +287,9 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type SignClient interface {
-	SignRaw(ctx context.Context, in *SignRawRequest, opts ...grpc.CallOption) (*SignRawResponse, error)
+	SignRaw(ctx context.Context, in *SignRawRequest, opts ...grpc.CallOption) (*SignResponse, error)
+	SignAttestation(ctx context.Context, in *SignAttestationRequest, opts ...grpc.CallOption) (*SignResponse, error)
+	SignBlock(ctx context.Context, in *SignBlockRequest, opts ...grpc.CallOption) (*SignResponse, error)
 }
 
 type signClient struct {
@@ -163,9 +300,27 @@ func NewSignClient(cc *grpc.ClientConn) SignClient {
 	return &signClient{cc}
 }
 
-func (c *signClient) SignRaw(ctx context.Context, in *SignRawRequest, opts ...grpc.CallOption) (*SignRawResponse, error) {
-	out := new(SignRawResponse)
+func (c *signClient) SignRaw(ctx context.Context, in *SignRawRequest, opts ...grpc.CallOption) (*SignResponse, error) {
+	out := new(SignResponse)
 	err := c.cc.Invoke(ctx, "/v1.Sign/SignRaw", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *signClient) SignAttestation(ctx context.Context, in *SignAttestationRequest, opts ...grpc.CallOption) (*SignResponse, error) {
+	out := new(SignResponse)
+	err := c.cc.Invoke(ctx, "/v1.Sign/SignAttestation", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *signClient) SignBlock(ctx context.Context, in *SignBlockRequest, opts ...grpc.CallOption) (*SignResponse, error) {
+	out := new(SignResponse)
+	err := c.cc.Invoke(ctx, "/v1.Sign/SignBlock", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -174,15 +329,23 @@ func (c *signClient) SignRaw(ctx context.Context, in *SignRawRequest, opts ...gr
 
 // SignServer is the server API for Sign service.
 type SignServer interface {
-	SignRaw(context.Context, *SignRawRequest) (*SignRawResponse, error)
+	SignRaw(context.Context, *SignRawRequest) (*SignResponse, error)
+	SignAttestation(context.Context, *SignAttestationRequest) (*SignResponse, error)
+	SignBlock(context.Context, *SignBlockRequest) (*SignResponse, error)
 }
 
 // UnimplementedSignServer can be embedded to have forward compatible implementations.
 type UnimplementedSignServer struct {
 }
 
-func (*UnimplementedSignServer) SignRaw(ctx context.Context, req *SignRawRequest) (*SignRawResponse, error) {
+func (*UnimplementedSignServer) SignRaw(ctx context.Context, req *SignRawRequest) (*SignResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SignRaw not implemented")
+}
+func (*UnimplementedSignServer) SignAttestation(ctx context.Context, req *SignAttestationRequest) (*SignResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SignAttestation not implemented")
+}
+func (*UnimplementedSignServer) SignBlock(ctx context.Context, req *SignBlockRequest) (*SignResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SignBlock not implemented")
 }
 
 func RegisterSignServer(s *grpc.Server, srv SignServer) {
@@ -207,6 +370,42 @@ func _Sign_SignRaw_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Sign_SignAttestation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SignAttestationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SignServer).SignAttestation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.Sign/SignAttestation",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SignServer).SignAttestation(ctx, req.(*SignAttestationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Sign_SignBlock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SignBlockRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SignServer).SignBlock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.Sign/SignBlock",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SignServer).SignBlock(ctx, req.(*SignBlockRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Sign_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "v1.Sign",
 	HandlerType: (*SignServer)(nil),
@@ -214,6 +413,14 @@ var _Sign_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SignRaw",
 			Handler:    _Sign_SignRaw_Handler,
+		},
+		{
+			MethodName: "SignAttestation",
+			Handler:    _Sign_SignAttestation_Handler,
+		},
+		{
+			MethodName: "SignBlock",
+			Handler:    _Sign_SignBlock_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

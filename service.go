@@ -2,8 +2,8 @@ package main
 
 import (
 	wtypes "github.com/wealdtech/go-eth2-wallet-types"
-	"github.com/wealdtech/go-grpcserver"
 	"github.com/wealdtech/walletd/backend"
+	"github.com/wealdtech/walletd/core"
 	pb "github.com/wealdtech/walletd/pb/v1"
 	accountsvc "github.com/wealdtech/walletd/services/account"
 	signsvc "github.com/wealdtech/walletd/services/sign"
@@ -24,7 +24,7 @@ func NewWalletService(stores []wtypes.Store) (*WalletService, error) {
 
 // ServeGRPC the wallet service over GRPC.
 func (w *WalletService) ServeGRPC() error {
-	grpcServer, err := grpcserver.NewServer()
+	grpcServer, err := core.NewServer()
 	if err != nil {
 		return err
 	}
