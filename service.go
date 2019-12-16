@@ -5,9 +5,9 @@ import (
 	"github.com/wealdtech/walletd/backend"
 	"github.com/wealdtech/walletd/core"
 	pb "github.com/wealdtech/walletd/pb/v1"
-	accountsvc "github.com/wealdtech/walletd/services/account"
-	signsvc "github.com/wealdtech/walletd/services/sign"
-	walletsvc "github.com/wealdtech/walletd/services/wallet"
+	"github.com/wealdtech/walletd/services/accountmanager"
+	"github.com/wealdtech/walletd/services/signer"
+	"github.com/wealdtech/walletd/services/walletmanager"
 )
 
 // WalletService provides the features and functions for the wallet.
@@ -31,9 +31,9 @@ func (w *WalletService) ServeGRPC() error {
 
 	fetcher := backend.NewMemFetcher(w.stores)
 
-	pb.RegisterWalletServer(grpcServer.Server(), walletsvc.NewService(fetcher))
-	pb.RegisterAccountServer(grpcServer.Server(), accountsvc.NewService(fetcher))
-	pb.RegisterSignServer(grpcServer.Server(), signsvc.NewService(fetcher))
+	pb.RegisterWalletManagerServer(grpcServer.Server(), walletmanager.NewService(fetcher))
+	pb.RegisterAccountManagerServer(grpcServer.Server(), accountmanager.NewService(fetcher))
+	pb.RegisterSignerServer(grpcServer.Server(), signer.NewService(fetcher))
 
 	err = grpcServer.Serve()
 	if err != nil {

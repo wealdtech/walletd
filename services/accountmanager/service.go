@@ -1,10 +1,10 @@
-package account
+package accountmanager
 
 import (
 	"github.com/wealdtech/walletd/backend"
 )
 
-// Service is the account service.
+// Service is the account manager service.
 type Service struct {
 	fetcher backend.Fetcher
 }

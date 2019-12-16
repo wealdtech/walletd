@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package v1;
 
-service Sign {
+service Signer {
   rpc SignRaw(SignRawRequest) returns (SignResponse) { }
   rpc SignAttestation(SignAttestationRequest) returns (SignResponse) { }
   rpc SignBlock(SignBlockRequest) returns (SignResponse) { }

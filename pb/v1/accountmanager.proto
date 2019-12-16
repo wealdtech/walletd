@@ -4,7 +4,7 @@ package v1;
 
 import "google/protobuf/empty.proto";
 
-service Account {
+service AccountManager {
   rpc Unlock(UnlockAccountRequest) returns (google.protobuf.Empty) {}
   rpc Lock(LockAccountRequest) returns (google.protobuf.Empty) {}
 }

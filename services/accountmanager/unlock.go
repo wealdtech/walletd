@@ -1,4 +1,4 @@
-package account
+package accountmanager
 
 import (
 	context "context"

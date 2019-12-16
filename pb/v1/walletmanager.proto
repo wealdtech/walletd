@@ -4,7 +4,7 @@ package v1;
 
 import "google/protobuf/empty.proto";
 
-service Wallet {
+service WalletManager {
   rpc Unlock(UnlockWalletRequest) returns (google.protobuf.Empty) {}
   rpc Lock(LockWalletRequest) returns (google.protobuf.Empty) {}
   rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse) {}

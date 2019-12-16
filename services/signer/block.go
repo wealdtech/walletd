@@ -1,4 +1,4 @@
-package sign
+package signer
 
 import (
 	context "context"

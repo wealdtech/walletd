@@ -1,4 +1,4 @@
-package account
+package walletmanager
 
 import (
 	context "context"
@@ -9,12 +9,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Lock locks an account.
-func (s *Service) Lock(ctx context.Context, req *pb.LockAccountRequest) (*empty.Empty, error) {
-	account, err := s.fetcher.FetchAccount(req.Account)
+// Lock locks a wallet.
+func (s *Service) Lock(ctx context.Context, req *pb.LockWalletRequest) (*empty.Empty, error) {
+	wallet, err := s.fetcher.FetchWallet(req.Wallet)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	account.Lock()
+	wallet.Lock()
 	return &empty.Empty{}, nil
 }

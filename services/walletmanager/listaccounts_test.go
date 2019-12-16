@@ -1,4 +1,4 @@
-package wallet_test
+package walletmanager_test
 
 import (
 	context "context"
@@ -12,7 +12,7 @@ import (
 	wtypes "github.com/wealdtech/go-eth2-wallet-types"
 	"github.com/wealdtech/walletd/backend"
 	pb "github.com/wealdtech/walletd/pb/v1"
-	"github.com/wealdtech/walletd/services/wallet"
+	"github.com/wealdtech/walletd/services/walletmanager"
 )
 
 func TestListAccounts(t *testing.T) {
@@ -66,7 +66,7 @@ func TestListAccounts(t *testing.T) {
 	}
 }
 
-func Setup() (*wallet.Service, error) {
+func Setup() (*walletmanager.Service, error) {
 	// Create a test service
 	store := scratch.New()
 	encryptor := keystorev4.New()
@@ -94,5 +94,5 @@ func Setup() (*wallet.Service, error) {
 
 	fetcher := backend.NewMemFetcher([]wtypes.Store{store})
 
-	return wallet.NewService(fetcher), nil
+	return walletmanager.NewService(fetcher), nil
 }

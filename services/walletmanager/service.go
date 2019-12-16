@@ -1,4 +1,4 @@
-package wallet
+package walletmanager
 
 import (
 	"github.com/wealdtech/walletd/backend"
