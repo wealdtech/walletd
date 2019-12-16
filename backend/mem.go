@@ -2,10 +2,10 @@ package backend
 
 import (
 	"errors"
-	"strings"
 
 	e2w "github.com/wealdtech/go-eth2-wallet"
 	types "github.com/wealdtech/go-eth2-wallet-types"
+	"github.com/wealdtech/walletd/util"
 )
 
 // MemFetcher contains an in-memory cache of wallets and accounts.
@@ -26,7 +26,7 @@ func NewMemFetcher(stores []types.Store) Fetcher {
 
 // FetchWallet fetches the wallet.
 func (f *MemFetcher) FetchWallet(path string) (types.Wallet, error) {
-	walletName, _, err := walletAndAccountNamesFromPath(path)
+	walletName, _, err := util.WalletAndAccountNamesFromPath(path)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (f *MemFetcher) FetchAccount(path string) (types.Account, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, accountName, err := walletAndAccountNamesFromPath(path)
+	_, accountName, err := util.WalletAndAccountNamesFromPath(path)
 	if err != nil {
 		return nil, err
 	}
@@ -73,21 +73,4 @@ func (f *MemFetcher) FetchAccount(path string) (types.Account, error) {
 	}
 	f.accounts[path] = account
 	return account, nil
-}
-
-// walletAndAccountNamesFromPath breaks a path in to wallet and account names.
-func walletAndAccountNamesFromPath(path string) (string, string, error) {
-	if len(path) == 0 {
-		return "", "", errors.New("invalid account format")
-	}
-	index := strings.Index(path, "/")
-	if index == -1 {
-		// Just the wallet
-		return path, "", nil
-	}
-	if index == len(path)-1 {
-		// Trailing /
-		return path[:index], "", nil
-	}
-	return path[:index], path[index+1:], nil
 }

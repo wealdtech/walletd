@@ -1,50 +1,26 @@
-package main
+package core
 
 import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/shibukawa/configdir"
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	filesystem "github.com/wealdtech/go-eth2-wallet-store-filesystem"
 	s3 "github.com/wealdtech/go-eth2-wallet-store-s3"
+	scratch "github.com/wealdtech/go-eth2-wallet-store-scratch"
 	wtypes "github.com/wealdtech/go-eth2-wallet-types"
 )
 
-type config struct {
-	Stores []*store `json:"stores"`
-}
-
-type store struct {
+// Store defines a store within the configuration
+type Store struct {
 	Name       string `json:"name"`
 	Type       string `json:"type"`
+	Protected  bool   `json:"protected"`
 	Passphrase string `json:"passphrase"`
 }
 
-// initConfig initialises the configuration.
-// Configuration can come from the configuration file or environment variables.
-func initConfig() (*config, error) {
-	viper.SetConfigName("config")
-
-	configDirs := configdir.New("wealdtech", "walletd")
-	viper.AddConfigPath(configDirs.QueryFolders(configdir.Global)[0].Path)
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			return nil, err
-		}
-	}
-	viper.SetEnvPrefix("walletd")
-	if err := viper.BindEnv("stores"); err != nil {
-		return nil, err
-	}
-
-	c := &config{}
-	return c, viper.Unmarshal(&c)
-}
-
-// initStores initialises the stores.
-func initStores(c *config) ([]wtypes.Store, error) {
+// InitStores initialises the stores from a configuration.
+func InitStores(c *Config) ([]wtypes.Store, error) {
 	if len(c.Stores) == 0 {
 		log.Warn("No stores configured; using default")
 		return initDefaultStores(), nil
@@ -59,13 +35,18 @@ func initStores(c *config) ([]wtypes.Store, error) {
 		}
 		switch store.Type {
 		case "filesystem":
+			log.WithField("name", store.Name).Debug("Adding filesystem store")
 			res = append(res, filesystem.New(filesystem.WithPassphrase([]byte(store.Passphrase))))
 		case "s3":
+			log.WithField("name", store.Name).Debug("Adding S3 store")
 			s3Store, err := s3.New(s3.WithPassphrase([]byte(store.Passphrase)))
 			if err != nil {
 				return nil, errors.Wrap(err, fmt.Sprintf("failed to access store %d", i))
 			}
 			res = append(res, s3Store)
+		case "scratch":
+			log.Debug("Adding scratch store")
+			res = append(res, scratch.New())
 		default:
 			return nil, fmt.Errorf("store %d has unhandled type %q", i, store.Type)
 		}

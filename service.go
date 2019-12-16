@@ -15,6 +15,13 @@ type WalletService struct {
 	stores []wtypes.Store
 }
 
+// NewWalletService creates a new wallet.
+func NewWalletService(stores []wtypes.Store) (*WalletService, error) {
+	return &WalletService{
+		stores: stores,
+	}, nil
+}
+
 // ServeGRPC the wallet service over GRPC.
 func (w *WalletService) ServeGRPC() error {
 	grpcServer, err := grpcserver.NewServer()
