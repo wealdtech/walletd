@@ -8,7 +8,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
@@ -19,12 +18,6 @@ type ExternalIP struct{}
 // SourceIPInterceptor adds the source IP address to incoming requests.
 func SourceIPInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		md, ok := metadata.FromIncomingContext(ctx)
-		if !ok {
-			return nil, status.Error(codes.Internal, "Failure")
-		}
-		md = md.Copy()
-
 		grpcPeer, ok := peer.FromContext(ctx)
 		if !ok {
 			return nil, status.Error(codes.Internal, "Failure")

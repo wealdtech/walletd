@@ -93,6 +93,7 @@ func Setup() (*walletmanager.Service, error) {
 	wallet1.Lock()
 
 	fetcher := backend.NewMemFetcher([]wtypes.Store{store})
+	ruler := backend.NewStaticRuler(nil)
 
-	return walletmanager.NewService(fetcher), nil
+	return walletmanager.NewService(fetcher, ruler), nil
 }
