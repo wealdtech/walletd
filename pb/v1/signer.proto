@@ -3,29 +3,13 @@ syntax = "proto3";
 package v1;
 
 service Signer {
-  rpc SignRaw(SignRawRequest) returns (SignResponse) { }
-  rpc SignAttestation(SignAttestationRequest) returns (SignResponse) { }
-  rpc SignBlock(SignBlockRequest) returns (SignResponse) { }
+  rpc Sign(SignRequest) returns (SignResponse) { }
 }
 
-message SignRawRequest {
+message SignRequest {
   string account = 1;
   bytes data = 2;
   uint64 domain = 3;
-}
-
-message SignAttestationRequest {
-  string account = 1;
-  uint64 epoch = 2;
-  bytes fork_version = 3;
-  bytes root = 4;
-}
-
-message SignBlockRequest {
-  string account = 1;
-  uint64 epoch = 2;
-  bytes fork_version = 3;
-  bytes root = 4;
 }
 
 message SignResponse {

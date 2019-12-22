@@ -7,7 +7,8 @@ import (
 
 // Config is the configuration for the daemon.
 type Config struct {
-	Stores []*Store `json:"stores"`
+	Stores []*Store          `json:"stores"`
+	Rules  []*RuleDefinition `json:"rules"`
 }
 
 // NewConfig creates a new configuration.

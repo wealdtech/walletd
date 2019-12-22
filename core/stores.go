@@ -20,13 +20,13 @@ type Store struct {
 }
 
 // InitStores initialises the stores from a configuration.
-func InitStores(c *Config) ([]wtypes.Store, error) {
-	if len(c.Stores) == 0 {
+func InitStores(stores []*Store) ([]wtypes.Store, error) {
+	if len(stores) == 0 {
 		log.Warn("No stores configured; using default")
 		return initDefaultStores(), nil
 	}
-	res := make([]wtypes.Store, len(c.Stores))
-	for i, store := range c.Stores {
+	res := make([]wtypes.Store, len(stores))
+	for i, store := range stores {
 		if store.Name == "" {
 			return nil, fmt.Errorf("store %d has no name", i)
 		}

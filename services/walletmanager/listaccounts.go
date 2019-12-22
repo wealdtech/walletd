@@ -15,6 +15,7 @@ import (
 
 // ListAccounts lists accounts given a path.
 func (s *Service) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest) (*pb.ListAccountsResponse, error) {
+	log.WithField("path", req.Path).Debug("ListAccounts()")
 	walletName, accountName, err := util.WalletAndAccountNamesFromPath(req.Path)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())

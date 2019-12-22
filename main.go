@@ -12,12 +12,17 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	stores, err := core.InitStores(config)
+	stores, err := core.InitStores(config.Stores)
 	if err != nil {
 		panic(err)
 	}
 
-	service, err := NewWalletService(stores)
+	rules, err := core.InitRules(config.Rules)
+	if err != nil {
+		panic(err)
+	}
+
+	service, err := NewWalletService(stores, rules)
 	if err != nil {
 		panic(err)
 	}

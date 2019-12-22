@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/wealdtech/walletd/interceptors"
 	"google.golang.org/grpc"
 )
 
@@ -14,7 +16,7 @@ type Server struct {
 
 // NewServer creates a new GRPC server.
 func NewServer() (*Server, error) {
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(interceptors.SourceIPInterceptor())))
 
 	return &Server{
 		grpcServer: grpcServer,
