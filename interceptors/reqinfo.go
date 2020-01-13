@@ -2,12 +2,10 @@ package interceptors
 
 import (
 	"context"
-	"fmt"
 	"net"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
@@ -22,19 +20,12 @@ func SourceIPInterceptor() grpc.UnaryServerInterceptor {
 		if !ok {
 			return nil, status.Error(codes.Internal, "Failure")
 		}
-
 		tcpAddr, ok := grpcPeer.Addr.(*net.TCPAddr)
 		if !ok {
 			return nil, status.Error(codes.Internal, "Failure")
 		}
 
-		ip := tcpAddr.IP.String()
-
-		grpclog.Warningf("External IP=%s", ip)
-		fmt.Printf("%s\n", ip)
-
-		newCtx := context.WithValue(ctx, &ExternalIP{}, ip)
-
+		newCtx := context.WithValue(ctx, &ExternalIP{}, tcpAddr.IP.String())
 		return handler(newCtx, req)
 	}
 }
