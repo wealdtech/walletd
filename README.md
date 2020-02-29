@@ -31,6 +31,35 @@ go get github.com/wealdtech/walletd
 
 ### Configuration
 
+Configuration is held in the default location:
+
+    - Windows: `%APPDATA%\wealdtech\walletd`
+    - MacOSX: `${HOME}/Library/Application Support/wealdtech/walletd`
+    - Linux: `${HOME}/.config/wealdtech/walletd`
+  
+A sample configuration file might look like:
+
+```
+{
+  "stores": [
+    {
+      "name": "Local",
+      "type": "filesystem"
+    }
+  ],
+  "rules": [
+    {
+      "name": "Signer",
+      "request": "sign",
+      "selector": ".*",
+      "script": "signer.lua"
+    }
+  ]
+}
+```
+
+Scripts are stored in the `scripts` directory of the default configuration location.
+
 ### Example
 
 ## Maintainers
@@ -43,4 +72,4 @@ Contributions welcome. Please check out [the issues](https://github.com/wealdtec
 
 ## License
 
-[Apache-2.0](LICENSE) © 2019 Weald Technology Trading Ltd
+[Apache-2.0](LICENSE) © 2020 Weald Technology Trading Ltd

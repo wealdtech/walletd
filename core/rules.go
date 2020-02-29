@@ -2,8 +2,10 @@ package core
 
 import (
 	"io/ioutil"
+	"path/filepath"
 	"regexp"
 
+	"github.com/shibukawa/configdir"
 	"github.com/sirupsen/logrus"
 )
 
@@ -61,7 +63,10 @@ func (r *Rule) Matches(request string, path string) bool {
 
 // NewRule creates a new rule from its definition.
 func NewRule(def *RuleDefinition) (*Rule, error) {
-	contents, err := ioutil.ReadFile(def.Script)
+	configDirs := configdir.New("wealdtech", "walletd")
+	configPath := configDirs.QueryFolders(configdir.Global)[0].Path
+	path := filepath.Join(configPath, "scripts", def.Script)
+	contents, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
