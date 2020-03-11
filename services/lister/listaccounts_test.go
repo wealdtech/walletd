@@ -1,4 +1,4 @@
-package walletmanager_test
+package lister_test
 
 import (
 	context "context"
@@ -7,39 +7,39 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	keystorev4 "github.com/wealdtech/go-eth2-wallet-encryptor-keystorev4"
-	hd "github.com/wealdtech/go-eth2-wallet-hd"
+	hd "github.com/wealdtech/go-eth2-wallet-hd/v2"
 	scratch "github.com/wealdtech/go-eth2-wallet-store-scratch"
-	wtypes "github.com/wealdtech/go-eth2-wallet-types"
+	wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
 	"github.com/wealdtech/walletd/backend"
 	pb "github.com/wealdtech/walletd/pb/v1"
-	"github.com/wealdtech/walletd/services/walletmanager"
+	"github.com/wealdtech/walletd/services/lister"
 )
 
 func TestListAccounts(t *testing.T) {
 	tests := []struct {
 		name     string
-		path     string
+		paths    []string
 		err      string
 		accounts []string
 	}{
 		{
-			name: "UnknownWallet",
-			path: "Unknown/.*",
-			err:  "rpc error: code = NotFound desc = No such wallet",
+			name:     "UnknownWallet",
+			paths:    []string{"Unknown/.*"},
+			accounts: []string{},
 		},
 		{
-			name:     "EmptyPath",
-			path:     "Wallet 1/",
+			name:     "UnknownPath",
+			paths:    []string{"Wallet 1/nothinghere"},
 			accounts: []string{},
 		},
 		{
 			name:     "All",
-			path:     "Wallet 1/.*",
+			paths:    []string{"Wallet 1"},
 			accounts: []string{"Account 1", "Account 2", "Account 3", "Account 4", "A different account"},
 		},
 		{
 			name:     "Subset",
-			path:     "Wallet 1/Account [0-9]+",
+			paths:    []string{"Wallet 1/Account [0-9]+"},
 			accounts: []string{"Account 1", "Account 2", "Account 3", "Account 4"},
 		},
 	}
@@ -50,7 +50,7 @@ func TestListAccounts(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 
-			req := &pb.ListAccountsRequest{Path: test.path}
+			req := &pb.ListAccountsRequest{Paths: test.paths}
 			resp, err := service.ListAccounts(context.Background(), req)
 			if test.err == "" {
 				// Result expected
@@ -66,7 +66,7 @@ func TestListAccounts(t *testing.T) {
 	}
 }
 
-func Setup() (*walletmanager.Service, error) {
+func Setup() (*lister.Service, error) {
 	// Create a test service
 	store := scratch.New()
 	encryptor := keystorev4.New()
@@ -94,6 +94,10 @@ func Setup() (*walletmanager.Service, error) {
 
 	fetcher := backend.NewMemFetcher([]wtypes.Store{store})
 	ruler := backend.NewStaticRuler(nil)
+	storage, err := backend.NewFSStorage("/tmp/")
+	if err != nil {
+		return nil, err
+	}
 
-	return walletmanager.NewService(fetcher, ruler), nil
+	return lister.NewService(fetcher, ruler, storage), nil
 }

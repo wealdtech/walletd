@@ -11,7 +11,7 @@ import (
 
 // Unlock unlocks an account.
 func (s *Service) Unlock(ctx context.Context, req *pb.UnlockAccountRequest) (*empty.Empty, error) {
-	account, err := s.fetcher.FetchAccount(req.Account)
+	_, account, err := s.fetcher.FetchAccount(req.Account)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

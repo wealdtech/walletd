@@ -7,7 +7,6 @@ import "google/protobuf/empty.proto";
 service WalletManager {
   rpc Unlock(UnlockWalletRequest) returns (google.protobuf.Empty) {}
   rpc Lock(LockWalletRequest) returns (google.protobuf.Empty) {}
-  rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse) {}
 }
 
 message UnlockWalletRequest {
@@ -17,18 +16,4 @@ message UnlockWalletRequest {
 
 message LockWalletRequest {
   string wallet = 1;
-}
-
-message ListAccountsRequest {
-  string path = 1;
-}
-
-message Account {
-  bytes uuid = 1;
-  string name = 2;
-  bytes public_key = 3;
-}
-
-message ListAccountsResponse {
- repeated Account accounts = 1;
 }

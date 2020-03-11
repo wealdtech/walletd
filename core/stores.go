@@ -8,7 +8,7 @@ import (
 	filesystem "github.com/wealdtech/go-eth2-wallet-store-filesystem"
 	s3 "github.com/wealdtech/go-eth2-wallet-store-s3"
 	scratch "github.com/wealdtech/go-eth2-wallet-store-scratch"
-	wtypes "github.com/wealdtech/go-eth2-wallet-types"
+	e2wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
 )
 
 // Store defines a store within the configuration
@@ -20,12 +20,12 @@ type Store struct {
 }
 
 // InitStores initialises the stores from a configuration.
-func InitStores(stores []*Store) ([]wtypes.Store, error) {
+func InitStores(stores []*Store) ([]e2wtypes.Store, error) {
 	if len(stores) == 0 {
 		log.Warn("No stores configured; using default")
 		return initDefaultStores(), nil
 	}
-	res := make([]wtypes.Store, len(stores))
+	res := make([]e2wtypes.Store, len(stores))
 	for i, store := range stores {
 		if store.Name == "" {
 			return nil, fmt.Errorf("store %d has no name", i)
@@ -55,8 +55,8 @@ func InitStores(stores []*Store) ([]wtypes.Store, error) {
 }
 
 // initDefaultStores initialises the default stores.
-func initDefaultStores() []wtypes.Store {
-	res := make([]wtypes.Store, 1)
+func initDefaultStores() []e2wtypes.Store {
+	res := make([]e2wtypes.Store, 1)
 	res[0] = filesystem.New()
 	return res
 }

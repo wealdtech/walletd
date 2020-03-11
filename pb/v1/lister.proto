@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package v1;
+
+service Lister {
+  rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse) { }
+}
+
+message ListAccountsRequest {
+  repeated string paths = 1;
+}
+
+message ListAccountsResponse {
+  repeated Account Accounts = 1;
+}
+
+message Account {
+  string name = 1;
+  bytes public_key = 2;
+}

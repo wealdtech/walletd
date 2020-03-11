@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	e2wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
 	"github.com/wealdtech/walletd/interceptors"
 	pb "github.com/wealdtech/walletd/pb/v1"
 	lua "github.com/yuin/gopher-lua"
@@ -14,7 +15,17 @@ import (
 
 // Sign signs data.
 func (s *Service) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignResponse, error) {
-	account, err := s.fetcher.FetchAccount(req.Account)
+	var wallet e2wtypes.Wallet
+	var account e2wtypes.Account
+	var err error
+	switch q := req.Id.(type) {
+	case *pb.SignRequest_Account:
+		wallet, account, err = s.fetcher.FetchAccount(q.Account)
+	case *pb.SignRequest_PublicKey:
+		wallet, account, err = s.fetcher.FetchAccountByKey(q.PublicKey)
+	default:
+		// TODO
+	}
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -22,9 +33,10 @@ func (s *Service) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespon
 	if !account.IsUnlocked() {
 		return nil, status.Error(codes.PermissionDenied, "Account is locked")
 	}
+	accountName := fmt.Sprintf("%s/%s", wallet.Name(), account.Name())
 
 	// Work through the rules we have to follow.
-	rules := s.ruler.Rules("sign", req.Account)
+	rules := s.ruler.Rules("sign", accountName)
 	if len(rules) > 0 {
 		for i := range rules {
 			l := lua.NewState()
@@ -35,8 +47,8 @@ func (s *Service) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespon
 			}
 
 			luaReq := l.NewTable()
-			luaReq.RawSetString("account", lua.LString(req.Account))
-			luaReq.RawSetString("domain", lua.LNumber(float64(req.Domain)))
+			luaReq.RawSetString("account", lua.LString(accountName))
+			luaReq.RawSetString("domain", lua.LString(hex.EncodeToString(req.Domain)))
 			luaReq.RawSetString("data", lua.LString(hex.EncodeToString(req.Data)))
 			if ip, ok := ctx.Value(&interceptors.ExternalIP{}).(string); ok {
 				luaReq.RawSetString("ip", lua.LString(ip))
@@ -57,7 +69,11 @@ func (s *Service) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespon
 		}
 	}
 
-	signature, err := account.Sign(req.Data, req.Domain)
+	signingRoot, err := generateSigningRootFromRoot(req.Data, req.Domain)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	signature, err := account.Sign(signingRoot[:])
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

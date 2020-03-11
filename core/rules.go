@@ -38,6 +38,11 @@ type Rule struct {
 	script  string
 }
 
+// Name returns the name for the rule.
+func (r *Rule) Name() string {
+	return r.name
+}
+
 // Script returns the script for the rule.
 func (r *Rule) Script() string {
 	return r.script

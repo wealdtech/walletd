@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package v1;
+
+// AttestationData is defined at https://github.com/ethereum/eth2.0-specs/blob/dev/specs/phase0/beacon-chain.md#attestationdata
+message AttestationData {
+  uint64 slot = 1;
+  uint64 committee_index = 2;
+  bytes beacon_block_root = 3;
+  Checkpoint source = 4;
+  Checkpoint target = 5;
+}
+
+// Checkpoint is defined at https://github.com/ethereum/eth2.0-specs/blob/dev/specs/phase0/beacon-chain.md#checkpoint
+message Checkpoint {
+  uint64 epoch = 1;
+  bytes root = 2;
+}
+
+// BeaconBlockheader is defined at https://github.com/ethereum/eth2.0-specs/blob/dev/specs/phase0/beacon-chain.md#beaconblockheader
+message BeaconBlockHeader {
+  uint64 slot = 1;
+  bytes parent_root = 2;
+  bytes state_root = 3;
+  bytes body_root = 4;
+}
+
+
