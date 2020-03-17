@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/wealdtech/go-bytesutil"
@@ -18,19 +19,22 @@ import (
 
 // MemFetcher contains an in-memory cache of wallets and accounts.
 type MemFetcher struct {
-	stores         []e2wtypes.Store
-	pubKeyAccounts map[[48]byte]string
-	wallets        map[string]e2wtypes.Wallet
-	accounts       map[string]e2wtypes.Account
+	stores        []e2wtypes.Store
+	pubKeyPaths   map[[48]byte]string
+	pubKeyPathsMx sync.RWMutex
+	wallets       map[string]e2wtypes.Wallet
+	walletsMx     sync.RWMutex
+	accounts      map[string]e2wtypes.Account
+	accountsMx    sync.RWMutex
 }
 
 // NewMemFetcher creates a new in-memory fetcher.
 func NewMemFetcher(stores []e2wtypes.Store) Fetcher {
 	return &MemFetcher{
-		stores:         stores,
-		pubKeyAccounts: make(map[[48]byte]string),
-		wallets:        make(map[string]e2wtypes.Wallet),
-		accounts:       make(map[string]e2wtypes.Account),
+		stores:      stores,
+		pubKeyPaths: make(map[[48]byte]string),
+		wallets:     make(map[string]e2wtypes.Wallet),
+		accounts:    make(map[string]e2wtypes.Account),
 	}
 }
 
@@ -42,11 +46,13 @@ func (f *MemFetcher) FetchWallet(path string) (e2wtypes.Wallet, error) {
 	}
 
 	// Return wallet from cache if present.
-	if wallet, exists := f.wallets[walletName]; exists {
+	f.walletsMx.RLock()
+	wallet, exists := f.wallets[walletName]
+	f.walletsMx.RUnlock()
+	if exists {
 		return wallet, nil
 	}
 
-	var wallet e2wtypes.Wallet
 	for _, store := range f.stores {
 		wallet, err = e2w.OpenWallet(walletName, e2w.WithStore(store))
 		if err == nil {
@@ -57,7 +63,9 @@ func (f *MemFetcher) FetchWallet(path string) (e2wtypes.Wallet, error) {
 		return nil, errors.New("Wallet not found")
 	}
 
+	f.walletsMx.Lock()
 	f.wallets[walletName] = wallet
+	f.walletsMx.Unlock()
 	return wallet, nil
 }
 
@@ -70,7 +78,11 @@ func (f *MemFetcher) FetchAccount(path string) (e2wtypes.Wallet, e2wtypes.Accoun
 	}
 
 	// Return account from cache if present.
-	if account, exists := f.accounts[path]; exists {
+	f.accountsMx.RLock()
+	account, exists := f.accounts[path]
+	f.accountsMx.RUnlock()
+	if exists {
+		log.WithField("path", path).Debug("Account found in cache; returning")
 		return wallet, account, nil
 	}
 
@@ -79,24 +91,33 @@ func (f *MemFetcher) FetchAccount(path string) (e2wtypes.Wallet, e2wtypes.Accoun
 	if err != nil {
 		return nil, nil, err
 	}
-	account, err := wallet.AccountByName(accountName)
+	account, err = wallet.AccountByName(accountName)
 	if err != nil {
 		return nil, nil, err
 	}
+	f.accountsMx.Lock()
 	f.accounts[path] = account
+	f.accountsMx.Unlock()
+	f.pubKeyPathsMx.Lock()
+	f.pubKeyPaths[bytesutil.ToBytes48(account.PublicKey().Marshal())] = fmt.Sprintf("%s/%s", wallet.Name(), account.Name())
+	f.pubKeyPathsMx.Unlock()
+	log.WithField("path", path).Debug("Account stored in cache; returning")
 	return wallet, account, nil
 }
 
-// FetchAccount fetches the account given its public key.
+// FetchAccountByKey fetches the account given its public key.
 func (f *MemFetcher) FetchAccountByKey(pubKey []byte) (e2wtypes.Wallet, e2wtypes.Account, error) {
 	// See if we already know this key.
-	if account, exists := f.pubKeyAccounts[bytesutil.ToBytes48(pubKey)]; exists {
+	f.pubKeyPathsMx.RLock()
+	account, exists := f.pubKeyPaths[bytesutil.ToBytes48(pubKey)]
+	f.pubKeyPathsMx.RUnlock()
+	if exists {
 		return f.FetchAccount(account)
 	}
 
 	// We don't.  Trawl wallets to find the result.
+	encryptor := keystorev4.New()
 	for _, store := range f.stores {
-		encryptor := keystorev4.New()
 		for walletBytes := range store.RetrieveWallets() {
 			wallet, err := walletFromBytes(walletBytes, store, encryptor)
 			if err != nil {
@@ -106,7 +127,13 @@ func (f *MemFetcher) FetchAccountByKey(pubKey []byte) (e2wtypes.Wallet, e2wtypes
 			for account := range wallet.Accounts() {
 				if bytes.Equal(account.PublicKey().Marshal(), pubKey) {
 					// Found it.
-					f.accounts[fmt.Sprintf("%s/%s", wallet.Name(), account.Name())] = account
+					path := fmt.Sprintf("%s/%s", wallet.Name(), account.Name())
+					f.accountsMx.Lock()
+					f.accounts[path] = account
+					f.accountsMx.Unlock()
+					f.pubKeyPathsMx.Lock()
+					f.pubKeyPaths[bytesutil.ToBytes48(pubKey)] = path
+					f.pubKeyPathsMx.Unlock()
 					return wallet, account, nil
 				}
 			}

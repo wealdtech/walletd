@@ -25,7 +25,7 @@ func InitStores(stores []*Store) ([]e2wtypes.Store, error) {
 		log.Warn("No stores configured; using default")
 		return initDefaultStores(), nil
 	}
-	res := make([]e2wtypes.Store, len(stores))
+	res := make([]e2wtypes.Store, 0, len(stores))
 	for i, store := range stores {
 		if store.Name == "" {
 			return nil, fmt.Errorf("store %d has no name", i)

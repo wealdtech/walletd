@@ -7,7 +7,7 @@
 [![codecov.io](https://img.shields.io/codecov/c/github/wealdtech/walletd.svg)](https://codecov.io/github/wealdtech/walletd)
 [![Go Report Card](https://goreportcard.com/badge/github.com/wealdtech/walletd)](https://goreportcard.com/report/github.com/wealdtech/walletd)
 
-Daemon holding Ethereum 2 keys and allowing signing operations to take place.
+Daemon for accessing Ethereum 2 wallets and allowing protected signing operations to take place.
 
 ## Table of Contents
 
@@ -31,7 +31,7 @@ go get github.com/wealdtech/walletd
 
 ### Configuration
 
-Configuration is held in the default location:
+The configuration file is at `config.json` and is held in the following location:
 
     - Windows: `%APPDATA%\wealdtech\walletd`
     - MacOSX: `${HOME}/Library/Application Support/wealdtech/walletd`
@@ -51,14 +51,34 @@ A sample configuration file might look like:
     {
       "name": "Signer",
       "request": "sign",
-      "selector": ".*",
-      "script": "signer.lua"
+      "account": "TODO",
+      "script": "sign.lua"
     }
   ]
 }
 ```
 
-Scripts are stored in the `scripts` directory of the default configuration location.
+### Rules
+
+Each time a signing request is sent to walletd it has the option to run a number of rules prior to signing the requested data.
+
+  - request:
+    - sign: general signing request
+    - sign beacon proposal: sign a block proposal for the beacon chain
+    - sign beacon attestation: sign a block attestation for the beacon chain
+  - account:
+
+### Scripts
+
+Scripts are stored in the `scripts` directory of the default configuration location.  Scripts are written in the lua language.  A script must contain an `approve()` function that takes the parameters `request` and `storage`.  `request` contains information about the signing request, and `storage` contains persistent storage specific to the request and requesting account.
+
+The `approve()` script should return one of the following three values:
+
+  - `Approved` the signing can proceed
+  - `Denied` the signing must not proceed
+  - `Failed` the attempt to decide if the signing should go ahead or not has failed (which also implies that the signing must not proceed)
+
+Multiple rules can match a single script.  In this situation all scripts are run one after the other, with a requirement for all scripts to return `Approved` before signing can proceed.
 
 ### Example
 

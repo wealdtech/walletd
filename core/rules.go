@@ -1,9 +1,11 @@
 package core
 
 import (
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/shibukawa/configdir"
 	"github.com/sirupsen/logrus"
@@ -49,17 +51,17 @@ func (r *Rule) Script() string {
 }
 
 // Matches returns true if this rule matches the path.
-func (r *Rule) Matches(request string, path string) bool {
+func (r *Rule) Matches(request string, account string) bool {
 	if r.request != request {
 		return false
 	}
-	res, err := regexp.Match(r.account, []byte(path))
+	res, err := regexp.Match(r.account, []byte(account))
 	if err != nil {
 		logrus.WithError(err).WithFields(logrus.Fields{
-			"request": request,
-			"path":    path,
-			"rule":    r.name,
-			"account": r.account,
+			"request":     request,
+			"account":     account,
+			"rule":        r.name,
+			"ruleaccount": r.account,
 		}).Warn("Match attempt failed")
 		return false
 	}
@@ -76,6 +78,15 @@ func NewRule(def *RuleDefinition) (*Rule, error) {
 		return nil, err
 	}
 
+	if def.Account == "" {
+		def.Account = "^.*$"
+	}
+	if !strings.HasPrefix(def.Account, "^") {
+		def.Account = fmt.Sprintf("^%s", def.Account)
+	}
+	if !strings.HasSuffix(def.Account, "$") {
+		def.Account = fmt.Sprintf("%s$", def.Account)
+	}
 	return &Rule{
 		name:    def.Name,
 		request: def.Request,
