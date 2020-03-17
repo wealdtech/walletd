@@ -3,7 +3,7 @@ package main
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/wealdtech/walletd/core"
-	"github.com/wealdtech/walletd/services/walletd"
+	"github.com/wealdtech/walletd/services/wallet"
 )
 
 func main() {
@@ -31,7 +31,7 @@ func main() {
 	}
 
 	// Initialise the wallet GRPC service.
-	service, err := walletd.New(stores, rules)
+	service, err := wallet.New(stores, rules)
 	if err != nil {
 		panic(err)
 	}
