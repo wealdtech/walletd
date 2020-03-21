@@ -11,9 +11,9 @@ import (
 	hd "github.com/wealdtech/go-eth2-wallet-hd/v2"
 	scratch "github.com/wealdtech/go-eth2-wallet-store-scratch"
 	wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
-	"github.com/wealdtech/walletd/backend"
 	"github.com/wealdtech/walletd/core"
 	"github.com/wealdtech/walletd/handlers/lister"
+	"github.com/wealdtech/walletd/services/fetcher/memfetcher"
 	"github.com/wealdtech/walletd/services/locker"
 	"github.com/wealdtech/walletd/services/ruler/lua"
 	"github.com/wealdtech/walletd/services/storage/mem"
@@ -100,7 +100,7 @@ func Setup() (*lister.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	fetcher := backend.NewMemFetcher([]wtypes.Store{store})
+	fetcher := memfetcher.New([]wtypes.Store{store})
 	storage, err := mem.New()
 	if err != nil {
 		return nil, err

@@ -1,4 +1,4 @@
-package backend
+package memfetcher
 
 import (
 	"bytes"
@@ -28,8 +28,8 @@ type MemFetcher struct {
 	accountsMx    sync.RWMutex
 }
 
-// NewMemFetcher creates a new in-memory fetcher.
-func NewMemFetcher(stores []e2wtypes.Store) Fetcher {
+// New creates a new in-memory fetcher.
+func New(stores []e2wtypes.Store) *MemFetcher {
 	return &MemFetcher{
 		stores:      stores,
 		pubKeyPaths: make(map[[48]byte]string),

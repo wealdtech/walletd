@@ -15,13 +15,13 @@ import (
 	log "github.com/sirupsen/logrus"
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
 	e2wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
-	"github.com/wealdtech/walletd/backend"
 	"github.com/wealdtech/walletd/core"
 	"github.com/wealdtech/walletd/handlers/accountmanager"
 	"github.com/wealdtech/walletd/handlers/lister"
 	"github.com/wealdtech/walletd/handlers/signer"
 	"github.com/wealdtech/walletd/handlers/walletmanager"
 	"github.com/wealdtech/walletd/interceptors"
+	"github.com/wealdtech/walletd/services/fetcher/memfetcher"
 	"github.com/wealdtech/walletd/services/locker"
 	"github.com/wealdtech/walletd/services/ruler/lua"
 	"github.com/wealdtech/walletd/services/storage/badger"
@@ -65,7 +65,7 @@ func (s *Service) ServeGRPC(config *core.ServerConfig) error {
 		return err
 	}
 
-	fetcher := backend.NewMemFetcher(s.stores)
+	fetcher := memfetcher.New(s.stores)
 
 	pb.RegisterWalletManagerServer(s.grpcServer, walletmanager.New(fetcher, ruler))
 	pb.RegisterAccountManagerServer(s.grpcServer, accountmanager.New(fetcher, ruler))
