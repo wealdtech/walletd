@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/wealdtech/go-bytesutil"
 	e2types "github.com/wealdtech/go-eth2-wallet-types/v2"
 	"github.com/wealdtech/walletd/backend"
 	"github.com/wealdtech/walletd/core"
@@ -18,6 +19,9 @@ func (s *Service) RunRules(ctx context.Context,
 	wallet e2types.Wallet,
 	account e2types.Account,
 	populateRequestTable func(*lua.LTable) error) backend.RulesResult {
+
+	s.locker.Lock(bytesutil.ToBytes48(account.PublicKey().Marshal()))
+	defer s.locker.Unlock(bytesutil.ToBytes48(account.PublicKey().Marshal()))
 
 	accountName := fmt.Sprintf("%s/%s", wallet.Name(), account.Name())
 	log := log.WithField("account", accountName)

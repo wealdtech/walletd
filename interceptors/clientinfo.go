@@ -3,6 +3,7 @@ package interceptors
 import (
 	"context"
 
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -29,6 +30,7 @@ func ClientInfoInterceptor() grpc.UnaryServerInterceptor {
 			if len(peerCerts) > 0 {
 				peerCert := peerCerts[0]
 				newCtx = context.WithValue(ctx, &ClientName{}, peerCert.Subject.CommonName)
+				grpc_ctxtags.Extract(ctx).Set("client", peerCert.Subject.CommonName)
 			}
 		}
 		return handler(newCtx, req)

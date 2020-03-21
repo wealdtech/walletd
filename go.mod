@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/DataDog/zstd v1.4.4 // indirect
-	github.com/aws/aws-sdk-go v1.29.24 // indirect
+	github.com/aws/aws-sdk-go v1.29.25 // indirect
 	github.com/dgraph-io/badger v1.6.0
 	github.com/dgraph-io/badger/v2 v2.0.2
 	github.com/dgraph-io/ristretto v0.0.2 // indirect
@@ -13,7 +13,7 @@ require (
 	github.com/golang/protobuf v1.3.5
 	github.com/google/uuid v1.1.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
-	github.com/herumi/bls-eth-go-binary v0.0.0-20200313064030-c7c3e3cdc81c // indirect
+	github.com/herumi/bls-eth-go-binary v0.0.0-20200317044537-980010b6b10b // indirect
 	github.com/jmespath/go-jmespath v0.3.0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/minio/highwayhash v1.0.0 // indirect
@@ -43,11 +43,11 @@ require (
 	github.com/wealdtech/go-eth2-wallet-store-scratch v1.3.1
 	github.com/wealdtech/go-eth2-wallet-types/v2 v2.0.0
 	github.com/yuin/gopher-lua v0.0.0-20191220021717-ab39c6098bdb
-	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4 // indirect
+	golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6 // indirect
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
-	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
+	golang.org/x/sys v0.0.0-20200317113312-5766fd39f98d // indirect
 	golang.org/x/text v0.3.2 // indirect
-	google.golang.org/genproto v0.0.0-20200313141609-30c55424f95d // indirect
+	google.golang.org/genproto v0.0.0-20200317114155-1f3552e48f24 // indirect
 	google.golang.org/grpc v1.28.0
 	gopkg.in/ini.v1 v1.55.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect

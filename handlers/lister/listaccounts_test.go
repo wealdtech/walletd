@@ -14,6 +14,7 @@ import (
 	"github.com/wealdtech/walletd/backend"
 	"github.com/wealdtech/walletd/core"
 	"github.com/wealdtech/walletd/handlers/lister"
+	"github.com/wealdtech/walletd/services/locker"
 	"github.com/wealdtech/walletd/services/ruler/lua"
 	"github.com/wealdtech/walletd/services/storage/mem"
 )
@@ -95,16 +96,20 @@ func Setup() (*lister.Handler, error) {
 	}
 	wallet1.Lock()
 
+	locker, err := locker.New()
+	if err != nil {
+		return nil, err
+	}
 	fetcher := backend.NewMemFetcher([]wtypes.Store{store})
 	storage, err := mem.New()
 	if err != nil {
 		return nil, err
 	}
 	rules := make([]*core.Rule, 0)
-	ruler, err := lua.New(storage, rules)
+	ruler, err := lua.New(locker, storage, rules)
 	if err != nil {
 		return nil, err
 	}
 
-	return lister.New(fetcher, ruler, storage), nil
+	return lister.New(fetcher, ruler), nil
 }
