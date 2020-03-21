@@ -11,6 +11,16 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// RulesResult represents the result of running a set of rules.
+type RulesResult int
+
+const (
+	UNKNOWN RulesResult = iota
+	APPROVED
+	DENIED
+	FAILED
+)
+
 // RuleDefinition defines a rule.
 type RuleDefinition struct {
 	Name    string `json:"name"`

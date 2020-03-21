@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
-	"github.com/wealdtech/walletd/backend"
+	"github.com/wealdtech/walletd/core"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -39,11 +39,11 @@ func (h *Handler) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespon
 			return nil
 		})
 	switch result {
-	case backend.APPROVED:
+	case core.APPROVED:
 		res.State = pb.SignState_SUCCEEDED
-	case backend.DENIED:
+	case core.DENIED:
 		res.State = pb.SignState_DENIED
-	case backend.FAILED:
+	case core.FAILED:
 		res.State = pb.SignState_FAILED
 	}
 

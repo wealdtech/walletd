@@ -7,7 +7,6 @@ import (
 
 	"github.com/wealdtech/go-bytesutil"
 	e2types "github.com/wealdtech/go-eth2-wallet-types/v2"
-	"github.com/wealdtech/walletd/backend"
 	"github.com/wealdtech/walletd/core"
 	"github.com/wealdtech/walletd/interceptors"
 	lua "github.com/yuin/gopher-lua"
@@ -18,7 +17,7 @@ func (s *Service) RunRules(ctx context.Context,
 	name string,
 	wallet e2types.Wallet,
 	account e2types.Account,
-	populateRequestTable func(*lua.LTable) error) backend.RulesResult {
+	populateRequestTable func(*lua.LTable) error) core.RulesResult {
 
 	s.locker.Lock(bytesutil.ToBytes48(account.PublicKey().Marshal()))
 	defer s.locker.Unlock(bytesutil.ToBytes48(account.PublicKey().Marshal()))
@@ -34,14 +33,14 @@ func (s *Service) RunRules(ctx context.Context,
 		defer l.Close()
 		if err := l.DoString(rules[i].Script()); err != nil {
 			log.WithError(err).Warn("Failed to parse script")
-			return backend.FAILED
+			return core.FAILED
 		}
 
 		req := &lua.LTable{}
 		if populateRequestTable != nil {
 			if err := populateRequestTable(req); err != nil {
 				log.WithError(err).Warn("Failed to populate request table")
-				return backend.FAILED
+				return core.FAILED
 			}
 		}
 		req.RawSetString("account", lua.LString(accountName))
@@ -57,7 +56,7 @@ func (s *Service) RunRules(ctx context.Context,
 		state, err := s.store.FetchState(storeKey)
 		if err != nil {
 			log.WithError(err).Warn("Failed to fetch state")
-			return backend.FAILED
+			return core.FAILED
 		}
 		storage := l.NewTable()
 		keys, values := state.FetchAll()
@@ -73,7 +72,7 @@ func (s *Service) RunRules(ctx context.Context,
 			Protect: true,
 		}, req, storage, messages); err != nil {
 			log.WithError(err).Warn("Failed to run script")
-			return backend.FAILED
+			return core.FAILED
 		}
 
 		approval := l.Get(-1)
@@ -95,26 +94,26 @@ func (s *Service) RunRules(ctx context.Context,
 			err = s.store.StoreState(storeKey, state)
 			if err != nil {
 				log.WithError(err).Warn("Failed to update state")
-				return backend.FAILED
+				return core.FAILED
 			}
 		case "Denied":
 			// Update state prior to issuing denial.
 			err = s.store.StoreState(storeKey, state)
 			if err != nil {
 				log.WithError(err).Warn("Failed to update state")
-				return backend.FAILED
+				return core.FAILED
 			}
-			return backend.DENIED
+			return core.DENIED
 		case "Error":
 			// Do not update state on a failure.
-			return backend.FAILED
+			return core.FAILED
 		default:
 			// Do not update state on unknown result.
 			log.WithField("result", approval.String()).Warn("Unexpected result")
-			return backend.FAILED
+			return core.FAILED
 		}
 	}
-	return backend.APPROVED
+	return core.APPROVED
 }
 
 // matchRules fetches rules that match with the request.

@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
-	"github.com/wealdtech/walletd/backend"
+	"github.com/wealdtech/walletd/core"
 	"github.com/wealdtech/walletd/util"
 )
 
@@ -52,7 +52,7 @@ func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest)
 			if accountRegex.Match([]byte(account.Name())) {
 				// Confirm listing of the key.
 				result := h.ruler.RunRules(ctx, "list account", wallet, account, nil)
-				if result == backend.APPROVED {
+				if result == core.APPROVED {
 					res.Accounts = append(res.Accounts, &pb.Account{
 						Name:      fmt.Sprintf("%s/%s", wallet.Name(), account.Name()),
 						PublicKey: account.PublicKey().Marshal(),

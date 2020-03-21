@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
-	"github.com/wealdtech/walletd/backend"
+	"github.com/wealdtech/walletd/core"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -43,11 +43,11 @@ func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconA
 			return nil
 		})
 	switch result {
-	case backend.APPROVED:
+	case core.APPROVED:
 		res.State = pb.SignState_SUCCEEDED
-	case backend.DENIED:
+	case core.DENIED:
 		res.State = pb.SignState_DENIED
-	case backend.FAILED:
+	case core.FAILED:
 		res.State = pb.SignState_FAILED
 	}
 
@@ -72,82 +72,3 @@ func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconA
 
 	return res, nil
 }
-
-// // runRules runs the rules for a signature process to see if it is approved.
-// func (s *Service) runRules(
-// 	ruleName string,
-// 	accountName string,
-// 	populateRequestTable func(*lua.LState) (*lua.LTable, error),
-// 	fetchState func() (*backend.State, error),
-// 	updateState func(*lua.LTable, *backend.State) error) pb.SignState {
-// 	// Work through the rules we have to follow for approval.
-// 	rules := s.ruler.Rules(ruleName, accountName)
-// 	if len(rules) > 0 {
-// 		for i := range rules {
-// 			log := log.WithField("script", rules[i].Name())
-// 			l := lua.NewState()
-// 			defer l.Close()
-// 			if err := l.DoString(rules[i].Script()); err != nil {
-// 				log.WithError(err).Warn("Failed to parse script")
-// 				return pb.SignState_FAILED
-// 			}
-//
-// 			// Request table is transient.
-// 			luaReq, err := populateRequestTable(l)
-// 			if err != nil {
-// 				log.WithError(err).Warn("Failed to populate request table")
-// 				return pb.SignState_FAILED
-// 			}
-//
-// 			state, err := fetchState()
-// 			if err != nil {
-// 				log.WithError(err).Warn("Failed to fetch state")
-// 				return pb.SignState_FAILED
-// 			}
-// 			luaStorage := l.NewTable()
-// 			keys, values := state.FetchAll()
-// 			for i := range keys {
-// 				fmt.Printf("Setting %v = %v\n", keys[i], values[i])
-// 				luaStorage.RawSet(lua.LString(keys[i]), values[i])
-// 			}
-//
-// 			if err := l.CallByParam(lua.P{
-// 				Fn:      l.GetGlobal("approve"),
-// 				NRet:    1,
-// 				Protect: true,
-// 			}, luaReq, luaStorage); err != nil {
-// 				log.WithError(err).Warn("Failed to run script")
-// 				return pb.SignState_FAILED
-// 			}
-//
-// 			approval := l.Get(-1)
-// 			l.Pop(1)
-//
-// 			switch approval.String() {
-// 			case "Approved":
-// 				// Update state prior to continuing.
-// 				err = updateState(luaStorage, state)
-// 				if err != nil {
-// 					log.WithError(err).Warn("Failed to update state")
-// 					return pb.SignState_FAILED
-// 				}
-// 			case "Denied":
-// 				// Update state prior to issuing denial.
-// 				err = updateState(luaStorage, state)
-// 				if err != nil {
-// 					log.WithError(err).Warn("Failed to update state")
-// 					return pb.SignState_FAILED
-// 				}
-// 				return pb.SignState_DENIED
-// 			case "Error":
-// 				// Do not update state on a failure.
-// 				return pb.SignState_FAILED
-// 			default:
-// 				// Do not update state on a failure.
-// 				log.WithField("result", approval.String()).Warn("Unexpected result")
-// 				return pb.SignState_FAILED
-// 			}
-// 		}
-// 	}
-// 	return pb.SignState_SUCCEEDED
-// }

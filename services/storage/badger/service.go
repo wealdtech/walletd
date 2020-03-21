@@ -6,7 +6,7 @@ import (
 
 	badger "github.com/dgraph-io/badger/v2"
 	"github.com/dgraph-io/badger/v2/options"
-	"github.com/wealdtech/walletd/backend"
+	"github.com/wealdtech/walletd/core"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -37,8 +37,8 @@ func New(base string) (*Store, error) {
 }
 
 // FetchState fetches state for a given key.
-func (s *Store) FetchState(key []byte) (*backend.State, error) {
-	state := backend.NewState()
+func (s *Store) FetchState(key []byte) (*core.State, error) {
+	state := core.NewState()
 	err := s.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
 		if err != nil {
@@ -65,7 +65,7 @@ func (s *Store) FetchState(key []byte) (*backend.State, error) {
 }
 
 // StoreState stores state for a given key.
-func (s *Store) StoreState(key []byte, state *backend.State) error {
+func (s *Store) StoreState(key []byte, state *core.State) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(state); err != nil {
