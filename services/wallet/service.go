@@ -21,6 +21,7 @@ import (
 	"github.com/wealdtech/walletd/handlers/signer"
 	"github.com/wealdtech/walletd/handlers/walletmanager"
 	"github.com/wealdtech/walletd/interceptors"
+	"github.com/wealdtech/walletd/services/checker"
 	"github.com/wealdtech/walletd/services/fetcher/memfetcher"
 	"github.com/wealdtech/walletd/services/locker"
 	"github.com/wealdtech/walletd/services/ruler/lua"
@@ -31,16 +32,18 @@ import (
 
 // Service provides the features and functions for the wallet daemon.
 type Service struct {
+	checker    checker.Service
 	stores     []e2wtypes.Store
 	rules      []*core.Rule
 	grpcServer *grpc.Server
 }
 
 // New creates a new wallet daemon service.
-func New(stores []e2wtypes.Store, rules []*core.Rule) (*Service, error) {
+func New(checker checker.Service, stores []e2wtypes.Store, rules []*core.Rule) (*Service, error) {
 	return &Service{
-		stores: stores,
-		rules:  rules,
+		checker: checker,
+		stores:  stores,
+		rules:   rules,
 	}, nil
 }
 
@@ -70,7 +73,7 @@ func (s *Service) ServeGRPC(config *core.ServerConfig) error {
 	pb.RegisterWalletManagerServer(s.grpcServer, walletmanager.New(fetcher, ruler))
 	pb.RegisterAccountManagerServer(s.grpcServer, accountmanager.New(fetcher, ruler))
 	pb.RegisterListerServer(s.grpcServer, lister.New(fetcher, ruler))
-	pb.RegisterSignerServer(s.grpcServer, signer.New(fetcher, ruler))
+	pb.RegisterSignerServer(s.grpcServer, signer.New(s.checker, fetcher, ruler))
 
 	err = s.Serve(config)
 	if err != nil {
@@ -89,6 +92,10 @@ func (s *Service) createServer(config *core.ServerConfig) error {
 				interceptors.SourceIPInterceptor(),
 				interceptors.ClientInfoInterceptor(),
 			)),
+	}
+
+	if config.Name == "" {
+		return errors.New("No server name provided; cannot proceed")
 	}
 
 	// Read in the server certificate; this is required to provide security over incoming connections.

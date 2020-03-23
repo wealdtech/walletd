@@ -10,10 +10,11 @@ import (
 
 // Config is the configuration for the daemon.
 type Config struct {
-	Verbosity string            `json:"verbosity"`
-	Server    *ServerConfig     `json:"server"`
-	Stores    []*Store          `json:"stores"`
-	Rules     []*RuleDefinition `json:"rules"`
+	Verbosity string             `json:"verbosity"`
+	Server    *ServerConfig      `json:"server"`
+	Stores    []*Store           `json:"stores"`
+	Rules     []*RuleDefinition  `json:"rules"`
+	Certs     []*CertificateInfo `json:"certificates"`
 }
 
 // ServerConfig contains configuration for the server.

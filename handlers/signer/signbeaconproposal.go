@@ -20,6 +20,17 @@ func (h *Handler) SignBeaconProposal(ctx context.Context, req *pb.SignBeaconProp
 		return res, nil
 	}
 
+	// Ensure this account is accessible by this client.
+	ok, err := h.checkClientAccess(ctx, wallet, account)
+	if err != nil {
+		res.State = pb.SignState_FAILED
+		return res, nil
+	}
+	if !ok {
+		res.State = pb.SignState_DENIED
+		return res, nil
+	}
+
 	if !account.IsUnlocked() {
 		log.Debug("Account is locked; signing request denied")
 		res.State = pb.SignState_DENIED

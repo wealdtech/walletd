@@ -21,6 +21,17 @@ func (h *Handler) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespon
 		return res, nil
 	}
 
+	// Ensure this account is accessible by this client.
+	ok, err := h.checkClientAccess(ctx, wallet, account)
+	if err != nil {
+		res.State = pb.SignState_FAILED
+		return res, nil
+	}
+	if !ok {
+		res.State = pb.SignState_DENIED
+		return res, nil
+	}
+
 	if !account.IsUnlocked() {
 		log.Debug("Account is locked; signing request denied")
 		res.State = pb.SignState_DENIED
