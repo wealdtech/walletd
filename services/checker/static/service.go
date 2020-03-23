@@ -15,8 +15,9 @@ type StaticChecker struct {
 }
 
 type path struct {
-	wallet  *regexp.Regexp
-	account *regexp.Regexp
+	wallet     *regexp.Regexp
+	account    *regexp.Regexp
+	operations []string
 }
 
 // New creates a new static checker.
@@ -33,17 +34,17 @@ func New(config []*core.CertificateInfo) (*StaticChecker, error) {
 		if certificateInfo.Name == "" {
 			return nil, errors.New("certificate info requires a name")
 		}
-		if len(certificateInfo.Accounts) == 0 {
-			return nil, errors.New("certificate info requires at least one account")
+		if len(certificateInfo.Permissions) == 0 {
+			return nil, errors.New("certificate info requires at least one permission")
 		}
-		paths := make([]*path, len(certificateInfo.Accounts))
-		for i, account := range certificateInfo.Accounts {
-			if account == "" {
-				return nil, errors.New("account path cannot be blank")
+		paths := make([]*path, len(certificateInfo.Permissions))
+		for i, permissions := range certificateInfo.Permissions {
+			if permissions.Path == "" {
+				return nil, errors.New("permission path cannot be blank")
 			}
-			walletName, accountName, err := walletAndAccountNamesFromPath(account)
+			walletName, accountName, err := walletAndAccountNamesFromPath(permissions.Path)
 			if err != nil {
-				return nil, fmt.Errorf("invalid account path %s", account)
+				return nil, fmt.Errorf("invalid account path %s", permissions.Path)
 			}
 			if walletName == "" {
 				return nil, errors.New("wallet cannot be blank")
@@ -57,8 +58,9 @@ func New(config []*core.CertificateInfo) (*StaticChecker, error) {
 				return nil, fmt.Errorf("invalid account regex %s", accountName)
 			}
 			paths[i] = &path{
-				wallet:  walletRegex,
-				account: accountRegex,
+				wallet:     walletRegex,
+				account:    accountRegex,
+				operations: permissions.Operations,
 			}
 		}
 		access[certificateInfo.Name] = paths
@@ -69,7 +71,7 @@ func New(config []*core.CertificateInfo) (*StaticChecker, error) {
 }
 
 // Check checks the client to see if the account is allowed.
-func (c *StaticChecker) Check(client string, account string) bool {
+func (c *StaticChecker) Check(client string, account string, operation string) bool {
 	log := log.WithField("client", client).WithField("account", account)
 
 	walletName, accountName, err := walletAndAccountNamesFromPath(account)
@@ -94,7 +96,11 @@ func (c *StaticChecker) Check(client string, account string) bool {
 
 	for _, path := range paths {
 		if path.wallet.Match([]byte(walletName)) && path.account.Match([]byte(accountName)) {
-			return true
+			for i := range path.operations {
+				if path.operations[i] == operation {
+					return true
+				}
+			}
 		}
 	}
 	return false

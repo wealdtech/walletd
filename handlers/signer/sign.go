@@ -22,7 +22,7 @@ func (h *Handler) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespon
 	}
 
 	// Ensure this account is accessible by this client.
-	ok, err := h.checkClientAccess(ctx, wallet, account)
+	ok, err := h.checkClientAccess(ctx, wallet, account, "Sign")
 	if err != nil {
 		res.State = pb.SignState_FAILED
 		return res, nil

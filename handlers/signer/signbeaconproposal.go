@@ -21,7 +21,7 @@ func (h *Handler) SignBeaconProposal(ctx context.Context, req *pb.SignBeaconProp
 	}
 
 	// Ensure this account is accessible by this client.
-	ok, err := h.checkClientAccess(ctx, wallet, account)
+	ok, err := h.checkClientAccess(ctx, wallet, account, "Sign beacon proposal")
 	if err != nil {
 		res.State = pb.SignState_FAILED
 		return res, nil

@@ -30,28 +30,28 @@ func TestNew(t *testing.T) {
 			err:    "certificate info requires a name",
 		},
 		{
-			name:   "CertInfoNoAccount",
+			name:   "CertInfoNoPermissions",
 			config: []*core.CertificateInfo{{Name: "test"}},
-			err:    "certificate info requires at least one account",
+			err:    "certificate info requires at least one permission",
 		},
 		{
-			name:   "CertInfoBadAccount",
-			config: []*core.CertificateInfo{{Name: "test", Accounts: []string{""}}},
-			err:    "account path cannot be blank",
+			name:   "CertInfoBadPath",
+			config: []*core.CertificateInfo{{Name: "test", Permissions: []*core.CertificatePermissions{{}}}},
+			err:    "permission path cannot be blank",
 		},
 		{
 			name:   "CertInfoBadWallet",
-			config: []*core.CertificateInfo{{Name: "test", Accounts: []string{"/foo"}}},
+			config: []*core.CertificateInfo{{Name: "test", Permissions: []*core.CertificatePermissions{{Path: "/foo"}}}},
 			err:    "wallet cannot be blank",
 		},
 		{
 			name:   "CertInfoInvalidWallet",
-			config: []*core.CertificateInfo{{Name: "test", Accounts: []string{"**/foo"}}},
+			config: []*core.CertificateInfo{{Name: "test", Permissions: []*core.CertificatePermissions{{Path: "**/foo"}}}},
 			err:    "invalid wallet regex **",
 		},
 		{
 			name:   "CertInfoInvalidAccount",
-			config: []*core.CertificateInfo{{Name: "test", Accounts: []string{"foo/**"}}},
+			config: []*core.CertificateInfo{{Name: "test", Permissions: []*core.CertificatePermissions{{Path: "foo/**"}}}},
 			err:    "invalid account regex **",
 		},
 	}
@@ -72,17 +72,23 @@ func TestNew(t *testing.T) {
 func TestCheck(t *testing.T) {
 	checker, err := static.New([]*core.CertificateInfo{
 		{
-			Name:     "client1",
-			Accounts: []string{"Wallet1"},
+			Name: "client1",
+			Permissions: []*core.CertificatePermissions{
+				{
+					Path:       "Wallet1",
+					Operations: []string{"Sign"},
+				},
+			},
 		},
 	})
 	require.Nil(t, err)
 
 	tests := []struct {
-		name    string
-		client  string
-		account string
-		result  bool
+		name      string
+		client    string
+		account   string
+		operation string
+		result    bool
 	}{
 		{
 			name:    "Empty",
@@ -121,12 +127,6 @@ func TestCheck(t *testing.T) {
 			result:  false,
 		},
 		{
-			name:    "Valid",
-			client:  "client1",
-			account: "Wallet1/valid",
-			result:  true,
-		},
-		{
 			name:    "UnknownClient",
 			client:  "clientx",
 			account: "Wallet1/valid",
@@ -138,11 +138,31 @@ func TestCheck(t *testing.T) {
 			account: "Wallet2/valid",
 			result:  false,
 		},
+		{
+			name:    "MissingOperation",
+			client:  "client1",
+			account: "Wallet1/valid",
+			result:  false,
+		},
+		{
+			name:      "BadOperation",
+			client:    "client1",
+			account:   "Wallet1/valid",
+			operation: "Bad",
+			result:    false,
+		},
+		{
+			name:      "Valid",
+			client:    "client1",
+			account:   "Wallet1/valid",
+			operation: "Sign",
+			result:    true,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := checker.Check(test.client, test.account)
+			result := checker.Check(test.client, test.account, test.operation)
 			assert.Equal(t, test.result, result)
 		})
 	}
