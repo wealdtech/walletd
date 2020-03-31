@@ -10,9 +10,10 @@ require (
 	github.com/dgraph-io/ristretto v0.0.2 // indirect
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/golang/protobuf v1.3.5
+	github.com/golang/protobuf v1.4.0-rc.4
 	github.com/google/uuid v1.1.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
+	github.com/hashicorp/vault v1.3.4 // indirect
 	github.com/herumi/bls-eth-go-binary v0.0.0-20200317044537-980010b6b10b // indirect
 	github.com/jmespath/go-jmespath v0.3.0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
@@ -32,7 +33,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.5.1
-	github.com/wealdtech/eth2-signer-api v1.0.1
+	github.com/wealdtech/eth2-signer-api v1.2.0
 	github.com/wealdtech/go-bytesutil v1.1.0
 	github.com/wealdtech/go-eth2-wallet v1.9.2
 	github.com/wealdtech/go-eth2-wallet-encryptor-keystorev4 v1.0.0
@@ -41,6 +42,7 @@ require (
 	github.com/wealdtech/go-eth2-wallet-store-filesystem v1.7.1
 	github.com/wealdtech/go-eth2-wallet-store-s3 v1.6.1
 	github.com/wealdtech/go-eth2-wallet-store-scratch v1.3.1
+	github.com/wealdtech/go-eth2-wallet-types v1.10.0
 	github.com/wealdtech/go-eth2-wallet-types/v2 v2.0.0
 	github.com/yuin/gopher-lua v0.0.0-20191220021717-ab39c6098bdb
 	golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6 // indirect

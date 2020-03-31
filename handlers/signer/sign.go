@@ -14,27 +14,35 @@ func (h *Handler) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespon
 	log.WithField("account", req.GetAccount()).WithField("pubkey", hex.EncodeToString(req.GetPublicKey())).Info("Sign request received")
 	res := &pb.SignResponse{}
 
+	if req.GetAccount() == "" && len(req.GetPublicKey()) == 0 {
+		log.WithField("result", "denied").Info("Neither account nor public key supplied; denied")
+		res.State = pb.ResponseState_DENIED
+		return res, nil
+	}
+
 	wallet, account, err := h.fetchAccount(req.GetAccount(), req.GetPublicKey())
 	if err != nil {
-		log.WithError(err).Debug("Failed to fetch account")
-		res.State = pb.SignState_FAILED
+		log.WithError(err).WithField("result", "failed").Warn("Account unknown or inaccessible")
+		res.State = pb.ResponseState_FAILED
 		return res, nil
 	}
 
 	// Ensure this account is accessible by this client.
 	ok, err := h.checkClientAccess(ctx, wallet, account, "Sign")
 	if err != nil {
-		res.State = pb.SignState_FAILED
+		log.WithError(err).WithField("result", "failed").Warn("Check client access failed")
+		res.State = pb.ResponseState_FAILED
 		return res, nil
 	}
 	if !ok {
-		res.State = pb.SignState_DENIED
+		log.WithField("result", "denied").Info("Check client access denied")
+		res.State = pb.ResponseState_DENIED
 		return res, nil
 	}
 
 	if !account.IsUnlocked() {
-		log.Debug("Account is locked; signing request denied")
-		res.State = pb.SignState_DENIED
+		log.WithField("result", "denied").Info("Account locked")
+		res.State = pb.ResponseState_DENIED
 		return res, nil
 	}
 
@@ -51,31 +59,34 @@ func (h *Handler) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespon
 		})
 	switch result {
 	case core.APPROVED:
-		res.State = pb.SignState_SUCCEEDED
+		res.State = pb.ResponseState_SUCCEEDED
 	case core.DENIED:
-		res.State = pb.SignState_DENIED
+		res.State = pb.ResponseState_DENIED
+		log.WithField("result", "denied").Info("Denied by rules")
 	case core.FAILED:
-		res.State = pb.SignState_FAILED
+		log.WithField("result", "failed").Warn("Rules check failed")
+		res.State = pb.ResponseState_FAILED
 	}
 
-	if res.State != pb.SignState_SUCCEEDED {
+	if res.State != pb.ResponseState_SUCCEEDED {
 		return res, nil
 	}
 
 	// Sign it.
 	signingRoot, err := generateSigningRootFromRoot(req.Data, req.Domain)
 	if err != nil {
-		log.WithError(err).Warn("Failed to generate signing root")
-		res.State = pb.SignState_FAILED
+		log.WithError(err).WithField("result", "failed").Warn("Failed to generate signing root")
+		res.State = pb.ResponseState_FAILED
 		return res, nil
 	}
 	signature, err := account.Sign(signingRoot[:])
 	if err != nil {
-		log.WithError(err).Warn("Failed to sign")
-		res.State = pb.SignState_FAILED
+		log.WithError(err).WithField("result", "failed").Warn("Failed to sign")
+		res.State = pb.ResponseState_FAILED
 		return res, nil
 	}
 	res.Signature = signature.Marshal()
 
+	log.WithError(err).WithField("result", "succeeded").Info("Success")
 	return res, nil
 }

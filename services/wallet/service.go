@@ -68,11 +68,14 @@ func (s *Service) ServeGRPC(config *core.ServerConfig) error {
 		return err
 	}
 
-	fetcher := memfetcher.New(s.stores)
+	fetcher, err := memfetcher.New(s.stores)
+	if err != nil {
+		return err
+	}
 
 	pb.RegisterWalletManagerServer(s.grpcServer, walletmanager.New(fetcher, ruler))
 	pb.RegisterAccountManagerServer(s.grpcServer, accountmanager.New(fetcher, ruler))
-	pb.RegisterListerServer(s.grpcServer, lister.New(fetcher, ruler))
+	pb.RegisterListerServer(s.grpcServer, lister.New(s.checker, fetcher, ruler))
 	pb.RegisterSignerServer(s.grpcServer, signer.New(s.checker, fetcher, ruler))
 
 	err = s.Serve(config)

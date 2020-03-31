@@ -26,6 +26,7 @@ type Store struct {
 func New(base string) (*Store, error) {
 	opt := badger.DefaultOptions(base)
 	opt.TableLoadingMode = options.LoadToRAM
+	opt.Logger = log
 	db, err := badger.Open(opt)
 	if err != nil {
 		return nil, err

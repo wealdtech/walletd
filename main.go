@@ -1,6 +1,9 @@
 package main
 
 import (
+	"flag"
+	"os"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/wealdtech/walletd/core"
 	staticchecker "github.com/wealdtech/walletd/services/checker/static"
@@ -8,15 +11,37 @@ import (
 )
 
 func main() {
+	showCerts := false
+	flag.BoolVar(&showCerts, "show-certs", false, "show server certificates and exit")
+	showPerms := false
+	flag.BoolVar(&showPerms, "show-perms", false, "show client permissions and exit")
+	flag.Parse()
+
 	// Fetch the configuration.
 	config, err := core.NewConfig()
 	if err != nil {
 		log.WithError(err).Fatal("Failed to obtain configuration")
 	}
 
+	if showCerts {
+		// Need to dump our certificate information.
+		core.DumpCerts(config.Server)
+		os.Exit(0)
+	}
+
 	logLevel, err := log.ParseLevel(config.Verbosity)
 	if err == nil {
 		log.SetLevel(logLevel)
+	}
+
+	permissions, err := core.FetchPermissions()
+	if err != nil {
+		log.WithError(err).Fatal("Failed to obtain permissions")
+	}
+	if showPerms {
+		// Need to dump our permission information.
+		core.DumpPerms(permissions)
+		os.Exit(0)
 	}
 
 	// Initialise the keymanager stores.
@@ -32,7 +57,7 @@ func main() {
 	}
 
 	// Set up the checker.
-	checker, err := staticchecker.New(config.Certs)
+	checker, err := staticchecker.New(permissions)
 	if err != nil {
 		log.WithError(err).Fatal("Failed to initialise certificate checker")
 	}

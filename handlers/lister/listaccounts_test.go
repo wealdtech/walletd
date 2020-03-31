@@ -100,7 +100,10 @@ func Setup() (*lister.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	fetcher := memfetcher.New([]wtypes.Store{store})
+	fetcher, err := memfetcher.New([]wtypes.Store{store})
+	if err != nil {
+		return nil, err
+	}
 	storage, err := mem.New()
 	if err != nil {
 		return nil, err
@@ -111,5 +114,5 @@ func Setup() (*lister.Handler, error) {
 		return nil, err
 	}
 
-	return lister.New(fetcher, ruler), nil
+	return lister.New(checker, fetcher, ruler), nil
 }

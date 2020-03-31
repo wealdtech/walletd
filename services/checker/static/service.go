@@ -21,24 +21,27 @@ type path struct {
 }
 
 // New creates a new static checker.
-func New(config []*core.CertificateInfo) (*StaticChecker, error) {
+func New(config *core.Permissions) (*StaticChecker, error) {
 	if config == nil {
 		return nil, errors.New("certificate info is required")
 	}
-	if len(config) == 0 {
+	if config.Certs == nil {
+		return nil, errors.New("certificates are required")
+	}
+	if len(config.Certs) == 0 {
 		return nil, errors.New("certificate info empty")
 	}
 
-	access := make(map[string][]*path, len(config))
-	for _, certificateInfo := range config {
+	access := make(map[string][]*path, len(config.Certs))
+	for _, certificateInfo := range config.Certs {
 		if certificateInfo.Name == "" {
 			return nil, errors.New("certificate info requires a name")
 		}
-		if len(certificateInfo.Permissions) == 0 {
+		if len(certificateInfo.Perms) == 0 {
 			return nil, errors.New("certificate info requires at least one permission")
 		}
-		paths := make([]*path, len(certificateInfo.Permissions))
-		for i, permissions := range certificateInfo.Permissions {
+		paths := make([]*path, len(certificateInfo.Perms))
+		for i, permissions := range certificateInfo.Perms {
 			if permissions.Path == "" {
 				return nil, errors.New("permission path cannot be blank")
 			}
@@ -97,7 +100,7 @@ func (c *StaticChecker) Check(client string, account string, operation string) b
 	for _, path := range paths {
 		if path.wallet.Match([]byte(walletName)) && path.account.Match([]byte(accountName)) {
 			for i := range path.operations {
-				if path.operations[i] == operation {
+				if path.operations[i] == "All" || path.operations[i] == operation {
 					return true
 				}
 			}

@@ -2,12 +2,15 @@ package lister
 
 import (
 	context "context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
+	e2wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
 	"github.com/wealdtech/walletd/core"
+	"github.com/wealdtech/walletd/interceptors"
 	"github.com/wealdtech/walletd/util"
 )
 
@@ -50,8 +53,19 @@ func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest)
 
 		for account := range wallet.Accounts() {
 			if accountRegex.Match([]byte(account.Name())) {
+				// Confirm access to the key
+				ok, err := h.checkClientAccess(ctx, wallet, account, "Access account")
+				if err != nil {
+					log.WithError(err).Warn("Failed to check account")
+					continue
+				}
+				if !ok {
+					// Not allowed
+					continue
+				}
+
 				// Confirm listing of the key.
-				result := h.ruler.RunRules(ctx, "list account", wallet, account, nil)
+				result := h.ruler.RunRules(ctx, "Access account", wallet, account, nil)
 				if result == core.APPROVED {
 					res.Accounts = append(res.Accounts, &pb.Account{
 						Name:      fmt.Sprintf("%s/%s", wallet.Name(), account.Name()),
@@ -62,4 +76,14 @@ func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest)
 		}
 	}
 	return res, nil
+}
+
+// checkClientAccess returns true if the client can access the account.
+func (h *Handler) checkClientAccess(ctx context.Context, wallet e2wtypes.Wallet, account e2wtypes.Account, operation string) (bool, error) {
+	client, ok := ctx.Value(&interceptors.ClientName{}).(string)
+	if !ok {
+		return false, errors.New("no client certificate name")
+	}
+	accountName := fmt.Sprintf("%s/%s", wallet.Name(), account.Name())
+	return h.checker.Check(string(client), accountName, operation), nil
 }

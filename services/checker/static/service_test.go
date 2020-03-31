@@ -11,54 +11,54 @@ import (
 
 func TestNew(t *testing.T) {
 	tests := []struct {
-		name   string
-		config []*core.CertificateInfo
-		err    string
+		name  string
+		perms *core.Permissions
+		err   string
 	}{
 		{
 			name: "Nil",
 			err:  "certificate info is required",
 		},
 		{
-			name:   "NoCertInfos",
-			config: []*core.CertificateInfo{},
-			err:    "certificate info empty",
+			name:  "NoCertInfo",
+			perms: &core.Permissions{},
+			err:   "certificates are required",
 		},
 		{
-			name:   "CertInfoEmpty",
-			config: []*core.CertificateInfo{{}},
-			err:    "certificate info requires a name",
+			name:  "CertInfoEmpty",
+			perms: &core.Permissions{Certs: []*core.CertificateInfo{{}}},
+			err:   "certificate info requires a name",
 		},
 		{
-			name:   "CertInfoNoPermissions",
-			config: []*core.CertificateInfo{{Name: "test"}},
-			err:    "certificate info requires at least one permission",
+			name:  "CertInfoNoPermissions",
+			perms: &core.Permissions{Certs: []*core.CertificateInfo{{Name: "test"}}},
+			err:   "certificate info requires at least one permission",
 		},
 		{
-			name:   "CertInfoBadPath",
-			config: []*core.CertificateInfo{{Name: "test", Permissions: []*core.CertificatePermissions{{}}}},
-			err:    "permission path cannot be blank",
+			name:  "CertInfoBadPath",
+			perms: &core.Permissions{Certs: []*core.CertificateInfo{{Name: "test", Perms: []*core.CertificatePerms{{}}}}},
+			err:   "permission path cannot be blank",
 		},
 		{
-			name:   "CertInfoBadWallet",
-			config: []*core.CertificateInfo{{Name: "test", Permissions: []*core.CertificatePermissions{{Path: "/foo"}}}},
-			err:    "wallet cannot be blank",
+			name:  "CertInfoBadWallet",
+			perms: &core.Permissions{Certs: []*core.CertificateInfo{{Name: "test", Perms: []*core.CertificatePerms{{Path: "/foo"}}}}},
+			err:   "wallet cannot be blank",
 		},
 		{
-			name:   "CertInfoInvalidWallet",
-			config: []*core.CertificateInfo{{Name: "test", Permissions: []*core.CertificatePermissions{{Path: "**/foo"}}}},
-			err:    "invalid wallet regex **",
+			name:  "CertInfoInvalidWallet",
+			perms: &core.Permissions{Certs: []*core.CertificateInfo{{Name: "test", Perms: []*core.CertificatePerms{{Path: "**/foo"}}}}},
+			err:   "invalid wallet regex **",
 		},
 		{
-			name:   "CertInfoInvalidAccount",
-			config: []*core.CertificateInfo{{Name: "test", Permissions: []*core.CertificatePermissions{{Path: "foo/**"}}}},
-			err:    "invalid account regex **",
+			name:  "CertInfoInvalidAccount",
+			perms: &core.Permissions{Certs: []*core.CertificateInfo{{Name: "test", Perms: []*core.CertificatePerms{{Path: "foo/**"}}}}},
+			err:   "invalid account regex **",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := static.New(test.config)
+			_, err := static.New(test.perms)
 			if test.err == "" {
 				require.Nil(t, err)
 			} else {
@@ -70,13 +70,15 @@ func TestNew(t *testing.T) {
 }
 
 func TestCheck(t *testing.T) {
-	checker, err := static.New([]*core.CertificateInfo{
-		{
-			Name: "client1",
-			Permissions: []*core.CertificatePermissions{
-				{
-					Path:       "Wallet1",
-					Operations: []string{"Sign"},
+	checker, err := static.New(&core.Permissions{
+		Certs: []*core.CertificateInfo{
+			{
+				Name: "client1",
+				Perms: []*core.CertificatePerms{
+					{
+						Path:       "Wallet1",
+						Operations: []string{"Sign"},
+					},
 				},
 			},
 		},

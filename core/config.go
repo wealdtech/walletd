@@ -10,11 +10,10 @@ import (
 
 // Config is the configuration for the daemon.
 type Config struct {
-	Verbosity string             `json:"verbosity"`
-	Server    *ServerConfig      `json:"server"`
-	Stores    []*Store           `json:"stores"`
-	Rules     []*RuleDefinition  `json:"rules"`
-	Certs     []*CertificateInfo `json:"certificates"`
+	Verbosity string            `json:"verbosity"`
+	Server    *ServerConfig     `json:"server"`
+	Stores    []*Store          `json:"stores"`
+	Rules     []*RuleDefinition `json:"rules"`
 }
 
 // ServerConfig contains configuration for the server.
@@ -24,6 +23,10 @@ type ServerConfig struct {
 	CertPath    string `json:"certificate_path"`
 	StoragePath string `json:"storage_path"`
 }
+
+const (
+	defaultPort = 12346
+)
 
 // NewConfig creates a new configuration.
 // Configuration can come from the configuration file or environment variables.
@@ -63,6 +66,9 @@ func NewConfig() (*Config, error) {
 	}
 	if viper.GetInt("port") != 0 {
 		c.Server.Port = viper.GetInt("port")
+	}
+	if c.Server.Port == 0 {
+		c.Server.Port = defaultPort
 	}
 	if c.Server.CertPath == "" {
 		c.Server.CertPath = filepath.Join(configPath, "security")

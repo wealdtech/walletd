@@ -3,21 +3,26 @@ package accountmanager
 import (
 	context "context"
 
-	empty "github.com/golang/protobuf/ptypes/empty"
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // Unlock unlocks an account.
-func (h *Handler) Unlock(ctx context.Context, req *pb.UnlockAccountRequest) (*empty.Empty, error) {
+func (h *Handler) Unlock(ctx context.Context, req *pb.UnlockAccountRequest) (*pb.UnlockAccountResponse, error) {
+	log.WithField("account", req.GetAccount()).Info("Unlock account received")
+	res := &pb.UnlockAccountResponse{}
+
 	_, account, err := h.fetcher.FetchAccount(req.Account)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		log.WithError(err).WithField("result", "denied").Info("Failed to fetch account")
+		res.State = pb.ResponseState_DENIED
+	} else {
+		err = account.Unlock(req.Passphrase)
+		if err != nil {
+			log.WithError(err).WithField("result", "denied").Info("Failed to unlock")
+			res.State = pb.ResponseState_DENIED
+		} else {
+			res.State = pb.ResponseState_SUCCEEDED
+		}
 	}
-	err = account.Unlock(req.Passphrase)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-	return &empty.Empty{}, nil
+	return res, nil
 }

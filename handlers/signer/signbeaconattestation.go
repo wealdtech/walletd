@@ -2,6 +2,7 @@ package signer
 
 import (
 	context "context"
+	"encoding/hex"
 	"fmt"
 
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
@@ -11,29 +12,35 @@ import (
 
 // SignBeaconAttestation signs a attestation for a beacon block.
 func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconAttestationRequest) (*pb.SignResponse, error) {
+	log.WithField("account", req.GetAccount()).WithField("pubkey", hex.EncodeToString(req.GetPublicKey())).Info("Sign beacon attestation request received")
 	res := &pb.SignResponse{}
+
+	if req.GetAccount() == "" && len(req.GetPublicKey()) == 0 {
+		res.State = pb.ResponseState_DENIED
+		return res, nil
+	}
 
 	wallet, account, err := h.fetchAccount(req.GetAccount(), req.GetPublicKey())
 	if err != nil {
 		log.WithError(err).Debug("Failed to fetch account")
-		res.State = pb.SignState_FAILED
+		res.State = pb.ResponseState_FAILED
 		return res, nil
 	}
 
 	// Ensure this account is accessible by this client.
 	ok, err := h.checkClientAccess(ctx, wallet, account, "Sign beacon attestation")
 	if err != nil {
-		res.State = pb.SignState_FAILED
+		res.State = pb.ResponseState_FAILED
 		return res, nil
 	}
 	if !ok {
-		res.State = pb.SignState_DENIED
+		res.State = pb.ResponseState_DENIED
 		return res, nil
 	}
 
 	if !account.IsUnlocked() {
 		log.Debug("Account is locked; signing request denied")
-		res.State = pb.SignState_DENIED
+		res.State = pb.ResponseState_DENIED
 		return res, nil
 	}
 
@@ -55,14 +62,14 @@ func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconA
 		})
 	switch result {
 	case core.APPROVED:
-		res.State = pb.SignState_SUCCEEDED
+		res.State = pb.ResponseState_SUCCEEDED
 	case core.DENIED:
-		res.State = pb.SignState_DENIED
+		res.State = pb.ResponseState_DENIED
 	case core.FAILED:
-		res.State = pb.SignState_FAILED
+		res.State = pb.ResponseState_FAILED
 	}
 
-	if res.State != pb.SignState_SUCCEEDED {
+	if res.State != pb.ResponseState_SUCCEEDED {
 		return res, nil
 	}
 
@@ -70,13 +77,13 @@ func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconA
 	signingRoot, err := generateSigningRootFromData(req.Data, req.Domain)
 	if err != nil {
 		log.WithError(err).Warn("Failed to generate signing root")
-		res.State = pb.SignState_FAILED
+		res.State = pb.ResponseState_FAILED
 		return res, nil
 	}
 	signature, err := account.Sign(signingRoot[:])
 	if err != nil {
 		log.WithError(err).Warn("Failed to sign")
-		res.State = pb.SignState_FAILED
+		res.State = pb.ResponseState_FAILED
 		return res, nil
 	}
 	res.Signature = signature.Marshal()
