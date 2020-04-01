@@ -80,7 +80,7 @@ func (s *Service) RunRules(ctx context.Context,
 
 		// Print out any messages from the script.
 		messages.ForEach(func(k lua.LValue, v lua.LValue) {
-			log.WithField("rule", rules[i].Name).Info(v)
+			log.WithField("rulename", rules[i].Name).Info(v)
 		})
 
 		// Update state with storage.

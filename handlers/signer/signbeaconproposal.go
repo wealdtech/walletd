@@ -39,9 +39,19 @@ func (h *Handler) SignBeaconProposal(ctx context.Context, req *pb.SignBeaconProp
 	}
 
 	if !account.IsUnlocked() {
-		log.Debug("Account is locked; signing request denied")
-		res.State = pb.ResponseState_DENIED
-		return res, nil
+		if h.autounlocker != nil {
+			unlocked, err := h.autounlocker.Unlock(ctx, wallet, account)
+			if err != nil {
+				res.State = pb.ResponseState_FAILED
+				log.WithField("result", "failed").Info("Failed during attempt to unlock account")
+				return res, nil
+			}
+			if !unlocked {
+				res.State = pb.ResponseState_DENIED
+				log.WithField("result", "denied").Debug("Account is locked; signing request denied")
+				return res, nil
+			}
+		}
 	}
 
 	// Confirm approval via rules.
@@ -86,5 +96,6 @@ func (h *Handler) SignBeaconProposal(ctx context.Context, req *pb.SignBeaconProp
 	}
 	res.Signature = signature.Marshal()
 
+	log.WithField("result", "succeeded").Info("Success")
 	return res, nil
 }

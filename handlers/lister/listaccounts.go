@@ -2,7 +2,6 @@ package lister
 
 import (
 	context "context"
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -16,6 +15,7 @@ import (
 
 // ListAccounts lists accouts.
 func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest) (*pb.ListAccountsResponse, error) {
+	log.WithField("paths", req.GetPaths()).Info("List accounts request received")
 	res := &pb.ListAccountsResponse{}
 	res.Accounts = make([]*pb.Account, 0)
 
@@ -23,11 +23,11 @@ func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest)
 		log := log.WithField("path", path)
 		walletName, accountPath, err := util.WalletAndAccountNamesFromPath(path)
 		if err != nil {
-			log.WithError(err).Info("Failed to obtain wallet and accout names")
+			log.WithError(err).Info("Failed to obtain wallet and accout names from path")
 			continue
 		}
 		if walletName == "" {
-			log.Info("Empty wallet name")
+			log.Info("Empty wallet in path")
 			continue
 		}
 
@@ -43,6 +43,7 @@ func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest)
 		accountRegex, err := regexp.Compile(accountPath)
 		if err != nil {
 			log.WithError(err).Info("Invalid account regular expression")
+			continue
 		}
 
 		wallet, err := h.fetcher.FetchWallet(path)
@@ -75,14 +76,18 @@ func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest)
 			}
 		}
 	}
+
+	res.State = pb.ResponseState_SUCCEEDED
+	log.Info("Success")
 	return res, nil
 }
 
 // checkClientAccess returns true if the client can access the account.
 func (h *Handler) checkClientAccess(ctx context.Context, wallet e2wtypes.Wallet, account e2wtypes.Account, operation string) (bool, error) {
-	client, ok := ctx.Value(&interceptors.ClientName{}).(string)
-	if !ok {
-		return false, errors.New("no client certificate name")
+	client := ""
+	val := ctx.Value(&interceptors.ClientName{})
+	if val != nil {
+		client = val.(string)
 	}
 	accountName := fmt.Sprintf("%s/%s", wallet.Name(), account.Name())
 	return h.checker.Check(string(client), accountName, operation), nil

@@ -41,9 +41,19 @@ func (h *Handler) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespon
 	}
 
 	if !account.IsUnlocked() {
-		log.WithField("result", "denied").Info("Account locked")
-		res.State = pb.ResponseState_DENIED
-		return res, nil
+		if h.autounlocker != nil {
+			unlocked, err := h.autounlocker.Unlock(ctx, wallet, account)
+			if err != nil {
+				res.State = pb.ResponseState_FAILED
+				log.WithField("result", "failed").Info("Failed during attempt to unlock account")
+				return res, nil
+			}
+			if !unlocked {
+				res.State = pb.ResponseState_DENIED
+				log.WithField("result", "denied").Info("Account is locked; signing request denied")
+				return res, nil
+			}
+		}
 	}
 
 	// Confirm approval via rules.
@@ -87,6 +97,6 @@ func (h *Handler) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespon
 	}
 	res.Signature = signature.Marshal()
 
-	log.WithError(err).WithField("result", "succeeded").Info("Success")
+	log.WithField("result", "succeeded").Info("Success")
 	return res, nil
 }

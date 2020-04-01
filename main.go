@@ -6,6 +6,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/wealdtech/walletd/core"
+	"github.com/wealdtech/walletd/services/autounlocker"
+	"github.com/wealdtech/walletd/services/autounlocker/keys"
 	staticchecker "github.com/wealdtech/walletd/services/checker/static"
 	"github.com/wealdtech/walletd/services/wallet"
 )
@@ -56,6 +58,19 @@ func main() {
 		log.WithError(err).Fatal("Failed to initialise rules")
 	}
 
+	// Set up the autounlocker.
+	var autounlocker autounlocker.Service
+	keysConfig, err := core.FetchKeysConfig()
+	if err != nil {
+		log.WithError(err).Fatal("Failed to obtain keys config")
+	}
+	if keysConfig != nil {
+		autounlocker, err = keys.New(keysConfig)
+		if err != nil {
+			log.WithError(err).Fatal("Failed to initialise keys-based autounlocker")
+		}
+	}
+
 	// Set up the checker.
 	checker, err := staticchecker.New(permissions)
 	if err != nil {
@@ -63,7 +78,7 @@ func main() {
 	}
 
 	// Initialise the wallet GRPC service.
-	service, err := wallet.New(checker, stores, rules)
+	service, err := wallet.New(autounlocker, checker, stores, rules)
 	if err != nil {
 		log.WithError(err).Fatal("Failed to create daemon")
 	}

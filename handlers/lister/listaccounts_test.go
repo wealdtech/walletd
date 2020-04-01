@@ -13,6 +13,7 @@ import (
 	wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
 	"github.com/wealdtech/walletd/core"
 	"github.com/wealdtech/walletd/handlers/lister"
+	"github.com/wealdtech/walletd/services/checker/dummy"
 	"github.com/wealdtech/walletd/services/fetcher/memfetcher"
 	"github.com/wealdtech/walletd/services/locker"
 	"github.com/wealdtech/walletd/services/ruler/lua"
@@ -27,6 +28,18 @@ func TestListAccounts(t *testing.T) {
 		accounts []string
 	}{
 		{
+			name:  "Missing",
+			paths: []string{},
+		},
+		{
+			name:  "Empty",
+			paths: []string{""},
+		},
+		{
+			name:  "NoWallet",
+			paths: []string{"/Account"},
+		},
+		{
 			name:     "UnknownWallet",
 			paths:    []string{"Unknown/.*"},
 			accounts: []string{},
@@ -34,6 +47,11 @@ func TestListAccounts(t *testing.T) {
 		{
 			name:     "UnknownPath",
 			paths:    []string{"Wallet 1/nothinghere"},
+			accounts: []string{},
+		},
+		{
+			name:     "BadPath",
+			paths:    []string{"Wallet 1/.***"},
 			accounts: []string{},
 		},
 		{
@@ -53,16 +71,14 @@ func TestListAccounts(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			req := &pb.ListAccountsRequest{Paths: test.paths}
 			resp, err := handler.ListAccounts(context.Background(), req)
 			if test.err == "" {
-				// Result expected
+				// Result expected.
 				require.Nil(t, err)
 				assert.Equal(t, len(test.accounts), len(resp.Accounts))
-				// TODO confirm names
 			} else {
-				// Error expected
+				// Error expected.
 				require.NotNil(t, err)
 				assert.Equal(t, test.err, err.Error())
 			}
@@ -110,6 +126,11 @@ func Setup() (*lister.Handler, error) {
 	}
 	rules := make([]*core.Rule, 0)
 	ruler, err := lua.New(locker, storage, rules)
+	if err != nil {
+		return nil, err
+	}
+
+	checker, err := dummy.New()
 	if err != nil {
 		return nil, err
 	}

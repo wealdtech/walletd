@@ -75,6 +75,10 @@ func New(config *core.Permissions) (*StaticChecker, error) {
 
 // Check checks the client to see if the account is allowed.
 func (c *StaticChecker) Check(client string, account string, operation string) bool {
+	if client == "" {
+		log.Info("No client certificate name")
+		return false
+	}
 	log := log.WithField("client", client).WithField("account", account)
 
 	walletName, accountName, err := walletAndAccountNamesFromPath(account)
