@@ -10,9 +10,25 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
+// Checkpoint is a copy of the Ethereum 2 Checkpoint struct with SSZ size information.
+type Checkpoint struct {
+	Epoch uint64
+	Root  []byte `ssz-size:"32"`
+}
+
+// BeaconAttestation is a copy of the Ethereum 2 BeaconAttestation struct with SSZ size information.
+type BeaconAttestation struct {
+	Slot            uint64
+	CommitteeIndex  uint64
+	BeaconBlockRoot []byte `ssz-size:"32"`
+	Source          *Checkpoint
+	Target          *Checkpoint
+}
+
 // SignBeaconAttestation signs a attestation for a beacon block.
 func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconAttestationRequest) (*pb.SignResponse, error) {
-	log.WithField("account", req.GetAccount()).WithField("pubkey", hex.EncodeToString(req.GetPublicKey())).Info("Sign beacon attestation request received")
+	log := log.WithField("account", req.GetAccount()).WithField("pubkey", hex.EncodeToString(req.GetPublicKey()))
+	log.Info("Sign beacon attestation request received")
 	res := &pb.SignResponse{}
 
 	if req.GetAccount() == "" && len(req.GetPublicKey()) == 0 {
@@ -22,7 +38,7 @@ func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconA
 
 	wallet, account, err := h.fetchAccount(req.GetAccount(), req.GetPublicKey())
 	if err != nil {
-		log.WithError(err).Debug("Failed to fetch account")
+		log.WithError(err).WithField("result", "failed").Warn("Account unknown or inaccessible")
 		res.State = pb.ResponseState_FAILED
 		return res, nil
 	}
@@ -30,10 +46,12 @@ func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconA
 	// Ensure this account is accessible by this client.
 	ok, err := h.checkClientAccess(ctx, wallet, account, "Sign beacon attestation")
 	if err != nil {
+		log.WithError(err).WithField("result", "failed").Warn("Check client access failed")
 		res.State = pb.ResponseState_FAILED
 		return res, nil
 	}
 	if !ok {
+		log.WithField("result", "denied").Info("Check client access denied")
 		res.State = pb.ResponseState_DENIED
 		return res, nil
 	}
@@ -42,13 +60,13 @@ func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconA
 		if h.autounlocker != nil {
 			unlocked, err := h.autounlocker.Unlock(ctx, wallet, account)
 			if err != nil {
-				res.State = pb.ResponseState_FAILED
 				log.WithField("result", "failed").Info("Failed during attempt to unlock account")
+				res.State = pb.ResponseState_FAILED
 				return res, nil
 			}
 			if !unlocked {
-				res.State = pb.ResponseState_DENIED
 				log.WithField("result", "denied").Debug("Account is locked; signing request denied")
+				res.State = pb.ResponseState_DENIED
 				return res, nil
 			}
 		}
@@ -74,8 +92,10 @@ func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconA
 	case core.APPROVED:
 		res.State = pb.ResponseState_SUCCEEDED
 	case core.DENIED:
+		log.WithField("result", "denied").Info("Denied by rules")
 		res.State = pb.ResponseState_DENIED
 	case core.FAILED:
+		log.WithField("result", "failed").Warn("Rules check failed")
 		res.State = pb.ResponseState_FAILED
 	}
 
@@ -83,16 +103,30 @@ func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconA
 		return res, nil
 	}
 
+	// Create a local copy of the data; we need ssz size information to calculate the correct root.
+	data := &BeaconAttestation{
+		Slot:            req.Data.Slot,
+		CommitteeIndex:  req.Data.CommitteeIndex,
+		BeaconBlockRoot: req.Data.BeaconBlockRoot,
+		Source: &Checkpoint{
+			Epoch: req.Data.Source.Epoch,
+			Root:  req.Data.Source.Root,
+		},
+		Target: &Checkpoint{
+			Epoch: req.Data.Target.Epoch,
+			Root:  req.Data.Target.Root,
+		},
+	}
 	// Sign it.
-	signingRoot, err := generateSigningRootFromData(req.Data, req.Domain)
+	signingRoot, err := generateSigningRootFromData(data, req.Domain)
 	if err != nil {
-		log.WithError(err).Warn("Failed to generate signing root")
+		log.WithError(err).WithField("result", "failed").Warn("Failed to generate signing root")
 		res.State = pb.ResponseState_FAILED
 		return res, nil
 	}
 	signature, err := account.Sign(signingRoot[:])
 	if err != nil {
-		log.WithError(err).Warn("Failed to sign")
+		log.WithError(err).WithField("result", "failed").Warn("Failed to sign")
 		res.State = pb.ResponseState_FAILED
 		return res, nil
 	}

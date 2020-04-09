@@ -1,7 +1,7 @@
 package signer
 
 import (
-	"github.com/prysmaticlabs/go-ssz"
+	ssz "github.com/prysmaticlabs/go-ssz"
 )
 
 func generateSigningRootFromData(data interface{}, domain []byte) ([32]byte, error) {
@@ -16,7 +16,7 @@ func generateSigningRootFromData(data interface{}, domain []byte) ([32]byte, err
 func generateSigningRootFromRoot(root []byte, domain []byte) ([32]byte, error) {
 	signingData := struct {
 		Hash   []byte `ssz-size:"32"`
-		Domain []byte `ssz-size:"8"`
+		Domain []byte `ssz-size:"32"`
 	}{
 		Hash:   root,
 		Domain: domain,

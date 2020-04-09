@@ -11,7 +11,8 @@ import (
 
 // Sign signs data.
 func (h *Handler) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignResponse, error) {
-	log.WithField("account", req.GetAccount()).WithField("pubkey", hex.EncodeToString(req.GetPublicKey())).Info("Sign request received")
+	log := log.WithField("account", req.GetAccount()).WithField("pubkey", hex.EncodeToString(req.GetPublicKey()))
+	log.Info("Sign request received")
 	res := &pb.SignResponse{}
 
 	if req.GetAccount() == "" && len(req.GetPublicKey()) == 0 {
@@ -44,13 +45,13 @@ func (h *Handler) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespon
 		if h.autounlocker != nil {
 			unlocked, err := h.autounlocker.Unlock(ctx, wallet, account)
 			if err != nil {
-				res.State = pb.ResponseState_FAILED
 				log.WithField("result", "failed").Info("Failed during attempt to unlock account")
+				res.State = pb.ResponseState_FAILED
 				return res, nil
 			}
 			if !unlocked {
-				res.State = pb.ResponseState_DENIED
 				log.WithField("result", "denied").Info("Account is locked; signing request denied")
+				res.State = pb.ResponseState_DENIED
 				return res, nil
 			}
 		}

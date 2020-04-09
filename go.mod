@@ -33,7 +33,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.5.1
-	github.com/wealdtech/eth2-signer-api v1.2.0
+	github.com/wealdtech/eth2-signer-api v1.3.0
 	github.com/wealdtech/go-bytesutil v1.1.0
 	github.com/wealdtech/go-eth2-wallet v1.9.2
 	github.com/wealdtech/go-eth2-wallet-encryptor-keystorev4 v1.0.0

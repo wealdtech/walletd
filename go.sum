@@ -722,6 +722,8 @@ github.com/wealdtech/eth2-signer-api v1.1.0 h1:A2hXTuepe4xK85Z6duR5YI89PkwSkslT1
 github.com/wealdtech/eth2-signer-api v1.1.0/go.mod h1:ldtNV52hdMEeJsUV/xZAOV7xogJU71v6kezF4yPBfig=
 github.com/wealdtech/eth2-signer-api v1.2.0 h1:AL4bRJDW6lyRc0ROPruVTEHt7Xs+EV2lRBPen2plOr8=
 github.com/wealdtech/eth2-signer-api v1.2.0/go.mod h1:H8OpAoTBl6CaBvZEnhxWDjjWXNc3kwVFKWMAZd6sHlk=
+github.com/wealdtech/eth2-signer-api v1.3.0 h1:Fs0GfrdhboBKW7zaMvIvUHJaOB1ibpAmRG3lkB53in4=
+github.com/wealdtech/eth2-signer-api v1.3.0/go.mod h1:H8OpAoTBl6CaBvZEnhxWDjjWXNc3kwVFKWMAZd6sHlk=
 github.com/wealdtech/go-bytesutil v1.0.0/go.mod h1:jENeMqeTEU8FNZyDFRVc7KqBdRKSnJ9CCh26TcuNb9s=
 github.com/wealdtech/go-bytesutil v1.0.1/go.mod h1:jENeMqeTEU8FNZyDFRVc7KqBdRKSnJ9CCh26TcuNb9s=
 github.com/wealdtech/go-bytesutil v1.1.0 h1:6XrN7OIQhhBjQy/PZ1HZ3ySE8v8UDyxzERkOgmsIc1g=
