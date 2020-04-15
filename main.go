@@ -5,6 +5,7 @@ import (
 	"os"
 
 	log "github.com/sirupsen/logrus"
+	e2types "github.com/wealdtech/go-eth2-types/v2"
 	"github.com/wealdtech/walletd/core"
 	"github.com/wealdtech/walletd/services/autounlocker"
 	"github.com/wealdtech/walletd/services/autounlocker/keys"
@@ -13,6 +14,10 @@ import (
 )
 
 func main() {
+	if err := e2types.InitBLS(); err != nil {
+		log.WithError(err).Fatal("Failed to initialise BLS library")
+	}
+
 	showCerts := false
 	flag.BoolVar(&showCerts, "show-certs", false, "show server certificates and exit")
 	showPerms := false
