@@ -2,15 +2,17 @@ package lister_test
 
 import (
 	context "context"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
+	e2types "github.com/wealdtech/go-eth2-types/v2"
 	keystorev4 "github.com/wealdtech/go-eth2-wallet-encryptor-keystorev4"
 	hd "github.com/wealdtech/go-eth2-wallet-hd/v2"
 	scratch "github.com/wealdtech/go-eth2-wallet-store-scratch"
-	wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
+	e2wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
 	"github.com/wealdtech/walletd/core"
 	"github.com/wealdtech/walletd/handlers/lister"
 	"github.com/wealdtech/walletd/services/checker/dummy"
@@ -19,6 +21,13 @@ import (
 	"github.com/wealdtech/walletd/services/ruler/lua"
 	"github.com/wealdtech/walletd/services/storage/mem"
 )
+
+func TestMain(m *testing.M) {
+	if err := e2types.InitBLS(); err != nil {
+		os.Exit(1)
+	}
+	os.Exit(m.Run())
+}
 
 func TestListAccounts(t *testing.T) {
 	tests := []struct {
@@ -116,7 +125,7 @@ func Setup() (*lister.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	fetcher, err := memfetcher.New([]wtypes.Store{store})
+	fetcher, err := memfetcher.New([]e2wtypes.Store{store})
 	if err != nil {
 		return nil, err
 	}

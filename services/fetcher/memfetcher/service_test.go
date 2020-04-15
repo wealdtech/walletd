@@ -2,16 +2,25 @@ package memfetcher_test
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	e2types "github.com/wealdtech/go-eth2-types/v2"
 	e2wallet "github.com/wealdtech/go-eth2-wallet"
-	"github.com/wealdtech/go-eth2-wallet-store-scratch"
+	scratch "github.com/wealdtech/go-eth2-wallet-store-scratch"
 	e2wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
 	"github.com/wealdtech/walletd/services/fetcher/memfetcher"
 )
+
+func TestMain(m *testing.M) {
+	if err := e2types.InitBLS(); err != nil {
+		os.Exit(1)
+	}
+	os.Exit(m.Run())
+}
 
 func TestNew(t *testing.T) {
 	tests := []struct {
