@@ -4,6 +4,7 @@ import (
 	context "context"
 	"encoding/hex"
 
+	"github.com/opentracing/opentracing-go"
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
 	"github.com/wealdtech/walletd/core"
 	lua "github.com/yuin/gopher-lua"
@@ -11,17 +12,20 @@ import (
 
 // Sign signs data.
 func (h *Handler) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "handlers.signer.Sign")
+	defer span.Finish()
+
 	log := log.WithField("account", req.GetAccount()).WithField("pubkey", hex.EncodeToString(req.GetPublicKey()))
-	log.Info("Sign request received")
+	log.Debug("Sign request received")
 	res := &pb.SignResponse{}
 
 	if req.GetAccount() == "" && len(req.GetPublicKey()) == 0 {
-		log.WithField("result", "denied").Info("Neither account nor public key supplied; denied")
+		log.WithField("result", "denied").Debug("Neither account nor public key supplied; denied")
 		res.State = pb.ResponseState_DENIED
 		return res, nil
 	}
 
-	wallet, account, err := h.fetchAccount(req.GetAccount(), req.GetPublicKey())
+	wallet, account, err := h.fetchAccount(ctx, req.GetAccount(), req.GetPublicKey())
 	if err != nil {
 		log.WithError(err).WithField("result", "failed").Warn("Account unknown or inaccessible")
 		res.State = pb.ResponseState_FAILED
@@ -36,7 +40,7 @@ func (h *Handler) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespon
 		return res, nil
 	}
 	if !ok {
-		log.WithField("result", "denied").Info("Check client access denied")
+		log.WithField("result", "denied").Debug("Check client access denied")
 		res.State = pb.ResponseState_DENIED
 		return res, nil
 	}
@@ -45,12 +49,12 @@ func (h *Handler) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespon
 		if h.autounlocker != nil {
 			unlocked, err := h.autounlocker.Unlock(ctx, wallet, account)
 			if err != nil {
-				log.WithField("result", "failed").Info("Failed during attempt to unlock account")
+				log.WithField("result", "failed").Debug("Failed during attempt to unlock account")
 				res.State = pb.ResponseState_FAILED
 				return res, nil
 			}
 			if !unlocked {
-				log.WithField("result", "denied").Info("Account is locked; signing request denied")
+				log.WithField("result", "denied").Debug("Account is locked; signing request denied")
 				res.State = pb.ResponseState_DENIED
 				return res, nil
 			}
@@ -73,7 +77,7 @@ func (h *Handler) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespon
 		res.State = pb.ResponseState_SUCCEEDED
 	case core.DENIED:
 		res.State = pb.ResponseState_DENIED
-		log.WithField("result", "denied").Info("Denied by rules")
+		log.WithField("result", "denied").Debug("Denied by rules")
 	case core.FAILED:
 		log.WithField("result", "failed").Warn("Rules check failed")
 		res.State = pb.ResponseState_FAILED
@@ -84,20 +88,24 @@ func (h *Handler) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespon
 	}
 
 	// Sign it.
-	signingRoot, err := generateSigningRootFromRoot(req.Data, req.Domain)
+	span, ctx = opentracing.StartSpanFromContext(ctx, "handlers.signer.Sign/Sign")
+	signingRoot, err := generateSigningRootFromRoot(ctx, req.Data, req.Domain)
 	if err != nil {
 		log.WithError(err).WithField("result", "failed").Warn("Failed to generate signing root")
 		res.State = pb.ResponseState_FAILED
+		span.Finish()
 		return res, nil
 	}
 	signature, err := account.Sign(signingRoot[:])
 	if err != nil {
 		log.WithError(err).WithField("result", "failed").Warn("Failed to sign")
 		res.State = pb.ResponseState_FAILED
+		span.Finish()
 		return res, nil
 	}
 	res.Signature = signature.Marshal()
+	span.Finish()
 
-	log.WithField("result", "succeeded").Info("Success")
+	log.WithField("result", "succeeded").Debug("Success")
 	return res, nil
 }

@@ -2,10 +2,12 @@ package badger
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 
 	badger "github.com/dgraph-io/badger/v2"
 	"github.com/dgraph-io/badger/v2/options"
+	"github.com/opentracing/opentracing-go"
 	"github.com/wealdtech/walletd/core"
 	lua "github.com/yuin/gopher-lua"
 )
@@ -26,6 +28,8 @@ type Store struct {
 func New(base string) (*Store, error) {
 	opt := badger.DefaultOptions(base)
 	opt.TableLoadingMode = options.LoadToRAM
+	// Increases performance, but could result in writes being lost if a crash occurs.
+	opt.SyncWrites = false
 	opt.Logger = log
 	db, err := badger.Open(opt)
 	if err != nil {
@@ -38,7 +42,10 @@ func New(base string) (*Store, error) {
 }
 
 // FetchState fetches state for a given key.
-func (s *Store) FetchState(key []byte) (*core.State, error) {
+func (s *Store) FetchState(ctx context.Context, key []byte) (*core.State, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "storage.badger.FetchState")
+	defer span.Finish()
+
 	state := core.NewState()
 	err := s.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
@@ -66,7 +73,10 @@ func (s *Store) FetchState(key []byte) (*core.State, error) {
 }
 
 // StoreState stores state for a given key.
-func (s *Store) StoreState(key []byte, state *core.State) error {
+func (s *Store) StoreState(ctx context.Context, key []byte, state *core.State) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "storage.badger.StoreState")
+	defer span.Finish()
+
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(state); err != nil {

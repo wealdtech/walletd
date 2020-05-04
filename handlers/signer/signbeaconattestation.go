@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/opentracing/opentracing-go"
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
 	"github.com/wealdtech/walletd/core"
 	lua "github.com/yuin/gopher-lua"
@@ -27,8 +28,11 @@ type BeaconAttestation struct {
 
 // SignBeaconAttestation signs a attestation for a beacon block.
 func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconAttestationRequest) (*pb.SignResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "handlers.signer.SignBeaconAttestation")
+	defer span.Finish()
+
 	log := log.WithField("account", req.GetAccount()).WithField("pubkey", hex.EncodeToString(req.GetPublicKey()))
-	log.Info("Sign beacon attestation request received")
+	log.Debug("Sign beacon attestation request received")
 	res := &pb.SignResponse{}
 
 	if req.GetAccount() == "" && len(req.GetPublicKey()) == 0 {
@@ -36,7 +40,7 @@ func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconA
 		return res, nil
 	}
 
-	wallet, account, err := h.fetchAccount(req.GetAccount(), req.GetPublicKey())
+	wallet, account, err := h.fetchAccount(ctx, req.GetAccount(), req.GetPublicKey())
 	if err != nil {
 		log.WithError(err).WithField("result", "failed").Warn("Account unknown or inaccessible")
 		res.State = pb.ResponseState_FAILED
@@ -51,7 +55,7 @@ func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconA
 		return res, nil
 	}
 	if !ok {
-		log.WithField("result", "denied").Info("Check client access denied")
+		log.WithField("result", "denied").Debug("Check client access denied")
 		res.State = pb.ResponseState_DENIED
 		return res, nil
 	}
@@ -60,7 +64,7 @@ func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconA
 		if h.autounlocker != nil {
 			unlocked, err := h.autounlocker.Unlock(ctx, wallet, account)
 			if err != nil {
-				log.WithField("result", "failed").Info("Failed during attempt to unlock account")
+				log.WithField("result", "failed").Debug("Failed during attempt to unlock account")
 				res.State = pb.ResponseState_FAILED
 				return res, nil
 			}
@@ -92,7 +96,7 @@ func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconA
 	case core.APPROVED:
 		res.State = pb.ResponseState_SUCCEEDED
 	case core.DENIED:
-		log.WithField("result", "denied").Info("Denied by rules")
+		log.WithField("result", "denied").Debug("Denied by rules")
 		res.State = pb.ResponseState_DENIED
 	case core.FAILED:
 		log.WithField("result", "failed").Warn("Rules check failed")
@@ -118,20 +122,19 @@ func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconA
 		},
 	}
 	// Sign it.
-	signingRoot, err := generateSigningRootFromData(data, req.Domain)
+	signingRoot, err := generateSigningRootFromData(ctx, data, req.Domain)
 	if err != nil {
 		log.WithError(err).WithField("result", "failed").Warn("Failed to generate signing root")
 		res.State = pb.ResponseState_FAILED
 		return res, nil
 	}
-	signature, err := account.Sign(signingRoot[:])
+	res.Signature, err = signRoot(ctx, account, signingRoot[:])
 	if err != nil {
 		log.WithError(err).WithField("result", "failed").Warn("Failed to sign")
 		res.State = pb.ResponseState_FAILED
 		return res, nil
 	}
-	res.Signature = signature.Marshal()
 
-	log.WithField("result", "succeeded").Info("Success")
+	log.WithField("result", "succeeded").Debug("Success")
 	return res, nil
 }

@@ -1,11 +1,13 @@
 package static
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 
+	"github.com/opentracing/opentracing-go"
 	"github.com/wealdtech/walletd/core"
 )
 
@@ -21,7 +23,10 @@ type path struct {
 }
 
 // New creates a new static checker.
-func New(config *core.Permissions) (*StaticChecker, error) {
+func New(ctx context.Context, config *core.Permissions) (*StaticChecker, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "checker.static.New")
+	defer span.Finish()
+
 	if config == nil {
 		return nil, errors.New("certificate info is required")
 	}
@@ -74,7 +79,10 @@ func New(config *core.Permissions) (*StaticChecker, error) {
 }
 
 // Check checks the client to see if the account is allowed.
-func (c *StaticChecker) Check(client string, account string, operation string) bool {
+func (c *StaticChecker) Check(ctx context.Context, client string, account string, operation string) bool {
+	span, _ := opentracing.StartSpanFromContext(ctx, "checker.static.Check")
+	defer span.Finish()
+
 	if client == "" {
 		log.Info("No client certificate name")
 		return false

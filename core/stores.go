@@ -1,8 +1,10 @@
 package core
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	filesystem "github.com/wealdtech/go-eth2-wallet-store-filesystem"
@@ -20,7 +22,10 @@ type Store struct {
 }
 
 // InitStores initialises the stores from a configuration.
-func InitStores(stores []*Store) ([]e2wtypes.Store, error) {
+func InitStores(ctx context.Context, stores []*Store) ([]e2wtypes.Store, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "core.InitStores")
+	defer span.Finish()
+
 	if len(stores) == 0 {
 		log.Warn("No stores configured; using default")
 		return initDefaultStores(), nil

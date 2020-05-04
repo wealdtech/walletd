@@ -1,12 +1,14 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/opentracing/opentracing-go"
 	"github.com/shibukawa/configdir"
 	"github.com/sirupsen/logrus"
 )
@@ -30,7 +32,10 @@ type RuleDefinition struct {
 }
 
 // InitRules initialises the rules from a configuration.
-func InitRules(defs []*RuleDefinition) ([]*Rule, error) {
+func InitRules(ctx context.Context, defs []*RuleDefinition) ([]*Rule, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "core.InitRules")
+	defer span.Finish()
+
 	rules := make([]*Rule, 0, len(defs))
 	for _, def := range defs {
 		rule, err := NewRule(def)

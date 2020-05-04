@@ -90,5 +90,5 @@ func (h *Handler) checkClientAccess(ctx context.Context, wallet e2wtypes.Wallet,
 		client = val.(string)
 	}
 	accountName := fmt.Sprintf("%s/%s", wallet.Name(), account.Name())
-	return h.checker.Check(string(client), accountName, operation), nil
+	return h.checker.Check(ctx, string(client), accountName, operation), nil
 }

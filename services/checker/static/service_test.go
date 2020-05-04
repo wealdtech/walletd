@@ -1,6 +1,7 @@
 package static_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -58,7 +59,7 @@ func TestNew(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := static.New(test.perms)
+			_, err := static.New(context.Background(), test.perms)
 			if test.err == "" {
 				require.Nil(t, err)
 			} else {
@@ -70,7 +71,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestCheck(t *testing.T) {
-	checker, err := static.New(&core.Permissions{
+	checker, err := static.New(context.Background(), &core.Permissions{
 		Certs: []*core.CertificateInfo{
 			{
 				Name: "client1",
@@ -164,7 +165,7 @@ func TestCheck(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := checker.Check(test.client, test.account, test.operation)
+			result := checker.Check(context.Background(), test.client, test.account, test.operation)
 			assert.Equal(t, test.result, result)
 		})
 	}

@@ -1,5 +1,7 @@
 package dummy
 
+import "context"
+
 // DummyChecker always returns true.  Only for testing.
 type DummyChecker struct{}
 
@@ -9,6 +11,6 @@ func New() (*DummyChecker, error) {
 }
 
 // Check returns true.
-func (c *DummyChecker) Check(client string, account string, operation string) bool {
+func (c *DummyChecker) Check(ctx context.Context, client string, account string, operation string) bool {
 	return true
 }

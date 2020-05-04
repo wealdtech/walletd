@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
@@ -41,7 +43,7 @@ type Service struct {
 }
 
 // New creates a new wallet daemon service.
-func New(autounlocker autounlocker.Service, checker checker.Service, stores []e2wtypes.Store, rules []*core.Rule) (*Service, error) {
+func New(ctx context.Context, autounlocker autounlocker.Service, checker checker.Service, stores []e2wtypes.Store, rules []*core.Rule) (*Service, error) {
 	return &Service{
 		autounlocker: autounlocker,
 		checker:      checker,
@@ -51,7 +53,10 @@ func New(autounlocker autounlocker.Service, checker checker.Service, stores []e2
 }
 
 // ServeGRPC the wallet service over GRPC.
-func (s *Service) ServeGRPC(config *core.ServerConfig) error {
+func (s *Service) ServeGRPC(ctx context.Context, config *core.ServerConfig) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "wallet.service.ServeGRPC")
+	defer span.Finish()
+
 	if err := s.createServer(config); err != nil {
 		return err
 	}

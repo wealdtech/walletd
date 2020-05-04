@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/opentracing/opentracing-go"
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
 	"github.com/wealdtech/walletd/core"
 	lua "github.com/yuin/gopher-lua"
@@ -21,17 +22,20 @@ type BeaconBlockHeader struct {
 
 // SignBeaconProposal signs a proposal for a beacon block.
 func (h *Handler) SignBeaconProposal(ctx context.Context, req *pb.SignBeaconProposalRequest) (*pb.SignResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "handlers.signer.SignBeaconProposal")
+	defer span.Finish()
+
 	log := log.WithField("account", req.GetAccount()).WithField("pubkey", hex.EncodeToString(req.GetPublicKey()))
-	log.Info("Sign beacon proposal request received")
+	log.Debug("Sign beacon proposal request received")
 	res := &pb.SignResponse{}
 
 	if req.GetAccount() == "" && len(req.GetPublicKey()) == 0 {
-		log.WithField("result", "denied").Info("Neither account nor public key supplied; denied")
+		log.WithField("result", "denied").Debug("Neither account nor public key supplied; denied")
 		res.State = pb.ResponseState_DENIED
 		return res, nil
 	}
 
-	wallet, account, err := h.fetchAccount(req.GetAccount(), req.GetPublicKey())
+	wallet, account, err := h.fetchAccount(ctx, req.GetAccount(), req.GetPublicKey())
 	if err != nil {
 		log.WithError(err).WithField("result", "failed").Warn("Account unknown or inaccessible")
 		res.State = pb.ResponseState_FAILED
@@ -46,7 +50,7 @@ func (h *Handler) SignBeaconProposal(ctx context.Context, req *pb.SignBeaconProp
 		return res, nil
 	}
 	if !ok {
-		log.WithField("result", "denied").Info("Check client access denied")
+		log.WithField("result", "denied").Debug("Check client access denied")
 		res.State = pb.ResponseState_DENIED
 		return res, nil
 	}
@@ -55,7 +59,7 @@ func (h *Handler) SignBeaconProposal(ctx context.Context, req *pb.SignBeaconProp
 		if h.autounlocker != nil {
 			unlocked, err := h.autounlocker.Unlock(ctx, wallet, account)
 			if err != nil {
-				log.WithField("result", "failed").Info("Failed during attempt to unlock account")
+				log.WithField("result", "failed").Debug("Failed during attempt to unlock account")
 				res.State = pb.ResponseState_FAILED
 				return res, nil
 			}
@@ -86,7 +90,7 @@ func (h *Handler) SignBeaconProposal(ctx context.Context, req *pb.SignBeaconProp
 	case core.APPROVED:
 		res.State = pb.ResponseState_SUCCEEDED
 	case core.DENIED:
-		log.WithField("result", "denied").Info("Denied by rules")
+		log.WithField("result", "denied").Debug("Denied by rules")
 		res.State = pb.ResponseState_DENIED
 	case core.FAILED:
 		log.WithField("result", "failed").Warn("Rules check failed")
@@ -107,7 +111,7 @@ func (h *Handler) SignBeaconProposal(ctx context.Context, req *pb.SignBeaconProp
 	}
 
 	// Sign it.
-	signingRoot, err := generateSigningRootFromData(data, req.Domain)
+	signingRoot, err := generateSigningRootFromData(ctx, data, req.Domain)
 	if err != nil {
 		log.WithError(err).WithField("result", "failed").Warn("Failed to generate signing root")
 		res.State = pb.ResponseState_FAILED
@@ -121,6 +125,6 @@ func (h *Handler) SignBeaconProposal(ctx context.Context, req *pb.SignBeaconProp
 	}
 	res.Signature = signature.Marshal()
 
-	log.WithField("result", "succeeded").Info("Success")
+	log.WithField("result", "succeeded").Debug("Success")
 	return res, nil
 }
