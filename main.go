@@ -26,17 +26,17 @@ func main() {
 	flag.BoolVar(&showCerts, "show-certs", false, "show server certificates and exit")
 	showPerms := false
 	flag.BoolVar(&showPerms, "show-perms", false, "show client permissions and exit")
-	pprof := false
-	flag.BoolVar(&pprof, "pprof", false, "add a pprof interface for profiling")
+	pprof := ""
+	flag.StringVar(&pprof, "pprof", "", "address of a pprof interface for profiling")
 	trace := false
 	flag.BoolVar(&trace, "trace", false, "provide opentracing stats")
 	flag.Parse()
 
-	if pprof {
+	if pprof != "" {
 		go func() {
+			// 100 as per https://github.com/golang/go/issues/23401#issuecomment-367029643
 			runtime.SetMutexProfileFraction(100)
-			//if err := http.ListenAndServe("localhost:6060", nil); err != nil {
-			if err := http.ListenAndServe("0.0.0.0:12333", nil); err != nil {
+			if err := http.ListenAndServe(pprof, nil); err != nil {
 				log.Warn().Err(err).Msg("Failed to start pprof server")
 			}
 		}()
