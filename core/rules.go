@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/opentracing/opentracing-go"
+	"github.com/rs/zerolog/log"
 	"github.com/shibukawa/configdir"
-	"github.com/sirupsen/logrus"
 )
 
 // RulesResult represents the result of running a set of rules.
@@ -72,12 +72,12 @@ func (r *Rule) Matches(request string, account string) bool {
 	}
 	res, err := regexp.Match(r.account, []byte(account))
 	if err != nil {
-		logrus.WithError(err).WithFields(logrus.Fields{
-			"request":     request,
-			"account":     account,
-			"rule":        r.name,
-			"ruleaccount": r.account,
-		}).Warn("Match attempt failed")
+		log.Warn().Err(err).
+			Str("request", request).
+			Str("account", account).
+			Str("rule", r.name).
+			Str("ruleaccount", r.account).
+			Msg("Match attempt failed")
 		return false
 	}
 	return res

@@ -1,5 +1,5 @@
 package static
 
-import "github.com/sirupsen/logrus"
+import zerologger "github.com/rs/zerolog/log"
 
-var log = logrus.WithField("module", "staticchecker")
+var log = zerologger.With().Str("module", "staticchecker").Logger()

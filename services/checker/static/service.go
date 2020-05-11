@@ -84,28 +84,28 @@ func (c *StaticChecker) Check(ctx context.Context, client string, account string
 	defer span.Finish()
 
 	if client == "" {
-		log.Info("No client certificate name")
+		log.Info().Msg("No client certificate name")
 		return false
 	}
-	log := log.WithField("client", client).WithField("account", account)
+	log := log.With().Str("client", client).Str("account", account).Logger()
 
 	walletName, accountName, err := walletAndAccountNamesFromPath(account)
 	if err != nil {
-		log.WithError(err).Debug("Invalid path")
+		log.Debug().Err(err).Msg("Invalid path")
 		return false
 	}
 	if walletName == "" {
-		log.WithError(err).Debug("Missing wallet name")
+		log.Debug().Err(err).Msg("Missing wallet name")
 		return false
 	}
 	if accountName == "" {
-		log.WithError(err).Debug("Missing account name")
+		log.Debug().Err(err).Msg("Missing account name")
 		return false
 	}
 
 	paths, exists := c.access[client]
 	if !exists {
-		log.Debug("Unknown client")
+		log.Debug().Msg("Unknown client")
 		return false
 	}
 

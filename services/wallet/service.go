@@ -7,14 +7,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"os"
 	"path/filepath"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
 	e2wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
 	"github.com/wealdtech/walletd/core"
@@ -29,8 +30,10 @@ import (
 	"github.com/wealdtech/walletd/services/locker"
 	"github.com/wealdtech/walletd/services/ruler/lua"
 	"github.com/wealdtech/walletd/services/storage/badger"
+	"github.com/wealdtech/walletd/util"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/grpclog"
 )
 
 // Service provides the features and functions for the wallet daemon.
@@ -95,11 +98,14 @@ func (s *Service) ServeGRPC(ctx context.Context, config *core.ServerConfig) erro
 
 // createServer creates the GRPC server.
 func (s *Service) createServer(config *core.ServerConfig) error {
+	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
+	logger = logger.With().Str("module", "grpc-wallet").Logger()
+	grpclog.SetLoggerV2(util.NewLogShim(logger))
+
 	grpcOpts := []grpc.ServerOption{
 		grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(
 				grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-				grpc_logrus.UnaryServerInterceptor(log.NewEntry(log.StandardLogger())),
 				interceptors.SourceIPInterceptor(),
 				interceptors.ClientInfoInterceptor(),
 			)),
@@ -111,7 +117,9 @@ func (s *Service) createServer(config *core.ServerConfig) error {
 
 	// Read in the server certificate; this is required to provide security over incoming connections.
 	serverCertFile := filepath.Join(config.CertPath, fmt.Sprintf("%s.crt", config.Name))
+	log.Debug().Str("path", serverCertFile).Msg("Server certificate file")
 	serverKeyFile := filepath.Join(config.CertPath, fmt.Sprintf("%s.key", config.Name))
+	log.Debug().Str("path", serverKeyFile).Msg("Server key file")
 	serverCert, err := tls.LoadX509KeyPair(serverCertFile, serverKeyFile)
 	if err != nil {
 		return errors.Wrap(err, "Failed to load server keypair")
@@ -119,6 +127,7 @@ func (s *Service) createServer(config *core.ServerConfig) error {
 
 	// Read in the certificate authority certificate; this is required to validate client certificates on incoming connections.
 	caCertFile := filepath.Join(config.CertPath, "ca.crt")
+	log.Debug().Str("path", caCertFile).Msg("CA certificate file")
 	certPool := x509.NewCertPool()
 	caCert, err := ioutil.ReadFile(caCertFile)
 	if err != nil {
@@ -147,7 +156,7 @@ func (s *Service) Serve(config *core.ServerConfig) error {
 	if err != nil {
 		return err
 	}
-	log.WithField("address", listenAddress).Info("Listening")
+	log.Info().Str("address", listenAddress).Msg("Listening")
 
 	if err := s.grpcServer.Serve(conn); err != nil {
 		return fmt.Errorf("could not serve gRPC: %v", err)

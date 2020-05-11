@@ -15,19 +15,19 @@ import (
 
 // ListAccounts lists accouts.
 func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest) (*pb.ListAccountsResponse, error) {
-	log.WithField("paths", req.GetPaths()).Info("List accounts request received")
+	log.Info().Strs("paths", req.GetPaths()).Msg("List accounts request received")
 	res := &pb.ListAccountsResponse{}
 	res.Accounts = make([]*pb.Account, 0)
 
 	for _, path := range req.Paths {
-		log := log.WithField("path", path)
+		log := log.With().Str("path", path).Logger()
 		walletName, accountPath, err := util.WalletAndAccountNamesFromPath(path)
 		if err != nil {
-			log.WithError(err).Info("Failed to obtain wallet and accout names from path")
+			log.Info().Err(err).Msg("Failed to obtain wallet and accout names from path")
 			continue
 		}
 		if walletName == "" {
-			log.Info("Empty wallet in path")
+			log.Info().Msg("Empty wallet in path")
 			continue
 		}
 
@@ -42,13 +42,13 @@ func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest)
 		}
 		accountRegex, err := regexp.Compile(accountPath)
 		if err != nil {
-			log.WithError(err).Info("Invalid account regular expression")
+			log.Info().Err(err).Msg("Invalid account regular expression")
 			continue
 		}
 
 		wallet, err := h.fetcher.FetchWallet(path)
 		if err != nil {
-			log.WithError(err).Info("Failed to obtain wallet")
+			log.Info().Err(err).Msg("Failed to obtain wallet")
 			continue
 		}
 
@@ -57,7 +57,7 @@ func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest)
 				// Confirm access to the key
 				ok, err := h.checkClientAccess(ctx, wallet, account, "Access account")
 				if err != nil {
-					log.WithError(err).Warn("Failed to check account")
+					log.Warn().Err(err).Msg("Failed to check account")
 					continue
 				}
 				if !ok {
@@ -66,7 +66,7 @@ func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest)
 				}
 
 				// Confirm listing of the key.
-				result := h.ruler.RunRules(ctx, "Access account", wallet, account, nil)
+				result := h.ruler.RunRules(ctx, "Access account", wallet.Name(), account.Name(), account.PublicKey().Marshal(), nil)
 				if result == core.APPROVED {
 					res.Accounts = append(res.Accounts, &pb.Account{
 						Name:      fmt.Sprintf("%s/%s", wallet.Name(), account.Name()),
@@ -78,7 +78,7 @@ func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest)
 	}
 
 	res.State = pb.ResponseState_SUCCEEDED
-	log.Info("Success")
+	log.Info().Msg("Success")
 	return res, nil
 }
 

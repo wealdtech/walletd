@@ -1,5 +1,5 @@
 package badger
 
-import "github.com/sirupsen/logrus"
+import zerologger "github.com/rs/zerolog/log"
 
-var log = logrus.WithField("module", "badger")
+var log = zerologger.With().Str("module", "badger").Logger()

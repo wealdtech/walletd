@@ -1,5 +1,5 @@
 package memfetcher
 
-import "github.com/sirupsen/logrus"
+import zerologger "github.com/rs/zerolog/log"
 
-var log = logrus.WithField("module", "memfetcher")
+var log = zerologger.With().Str("module", "memfetcher").Logger()

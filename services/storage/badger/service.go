@@ -9,6 +9,7 @@ import (
 	"github.com/dgraph-io/badger/v2/options"
 	"github.com/opentracing/opentracing-go"
 	"github.com/wealdtech/walletd/core"
+	"github.com/wealdtech/walletd/util"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -30,7 +31,7 @@ func New(base string) (*Store, error) {
 	opt.TableLoadingMode = options.LoadToRAM
 	// Increases performance, but could result in writes being lost if a crash occurs.
 	opt.SyncWrites = false
-	opt.Logger = log
+	opt.Logger = util.NewLogShim(log)
 	db, err := badger.Open(opt)
 	if err != nil {
 		return nil, err

@@ -5,12 +5,14 @@ import (
 	"flag"
 	"os"
 	"runtime"
+	"strings"
 
 	"net/http"
 	_ "net/http/pprof"
 
 	"github.com/opentracing/opentracing-go"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	e2types "github.com/wealdtech/go-eth2-types/v2"
 	"github.com/wealdtech/walletd/core"
 	"github.com/wealdtech/walletd/services/autounlocker"
@@ -32,10 +34,10 @@ func main() {
 
 	if pprof {
 		go func() {
-			runtime.SetMutexProfileFraction(1)
+			runtime.SetMutexProfileFraction(100)
 			//if err := http.ListenAndServe("localhost:6060", nil); err != nil {
 			if err := http.ListenAndServe("0.0.0.0:12333", nil); err != nil {
-				log.WithError(err).Warn("Failed to start pprof server")
+				log.Warn().Err(err).Msg("Failed to start pprof server")
 			}
 		}()
 	}
@@ -46,7 +48,7 @@ func main() {
 	if trace {
 		tracer, closer, err := InitTracer("walletd")
 		if err != nil {
-			log.WithError(err).Fatal("Failed to initialise tracer")
+			log.Fatal().Err(err).Msg("Failed to initialise tracer")
 		}
 		defer closer.Close()
 		opentracing.SetGlobalTracer(tracer)
@@ -56,13 +58,13 @@ func main() {
 	}
 
 	if err := e2types.InitBLS(); err != nil {
-		log.WithError(err).Fatal("Failed to initialise BLS library")
+		log.Fatal().Err(err).Msg("Failed to initialise BLS library")
 	}
 
 	// Fetch the configuration.
 	config, err := core.NewConfig()
 	if err != nil {
-		log.WithError(err).Fatal("Failed to obtain configuration")
+		log.Fatal().Err(err).Msg("Failed to obtain configuration")
 	}
 
 	if showCerts {
@@ -71,14 +73,15 @@ func main() {
 		os.Exit(0)
 	}
 
-	logLevel, err := log.ParseLevel(config.Verbosity)
-	if err == nil {
-		log.SetLevel(logLevel)
+	if strings.ToLower(config.Verbosity) == "debug" {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	} else {
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 
 	permissions, err := core.FetchPermissions()
 	if err != nil {
-		log.WithError(err).Fatal("Failed to obtain permissions")
+		log.Fatal().Err(err).Msg("Failed to obtain permissions")
 	}
 	if showPerms {
 		// Need to dump our permission information.
@@ -89,42 +92,42 @@ func main() {
 	// Initialise the keymanager stores.
 	stores, err := core.InitStores(ctx, config.Stores)
 	if err != nil {
-		log.WithError(err).Fatal("Failed to initialise stores")
+		log.Fatal().Err(err).Msg("Failed to initialise stores")
 	}
 
 	// Initialise the rules.
 	rules, err := core.InitRules(ctx, config.Rules)
 	if err != nil {
-		log.WithError(err).Fatal("Failed to initialise rules")
+		log.Fatal().Err(err).Msg("Failed to initialise rules")
 	}
 
 	// Set up the autounlocker.
 	var autounlocker autounlocker.Service
 	keysConfig, err := core.FetchKeysConfig()
 	if err != nil {
-		log.WithError(err).Fatal("Failed to obtain keys config")
+		log.Fatal().Err(err).Msg("Failed to obtain keys config")
 	}
 	if keysConfig != nil {
 		autounlocker, err = keys.New(ctx, keysConfig)
 		if err != nil {
-			log.WithError(err).Fatal("Failed to initialise keys-based autounlocker")
+			log.Fatal().Err(err).Msg("Failed to initialise keys-based autounlocker")
 		}
 	}
 
 	// Set up the checker.
 	checker, err := staticchecker.New(ctx, permissions)
 	if err != nil {
-		log.WithError(err).Fatal("Failed to initialise certificate checker")
+		log.Fatal().Err(err).Msg("Failed to initialise certificate checker")
 	}
 
 	// Initialise the wallet GRPC service.
 	service, err := wallet.New(ctx, autounlocker, checker, stores, rules)
 	if err != nil {
-		log.WithError(err).Fatal("Failed to create daemon")
+		log.Fatal().Err(err).Msg("Failed to create daemon")
 	}
 
 	// Start.
 	if err := service.ServeGRPC(ctx, config.Server); err != nil {
-		log.WithError(err).Fatal("Error running daemon")
+		log.Fatal().Err(err).Msg("Error running daemon")
 	}
 }

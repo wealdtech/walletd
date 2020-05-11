@@ -86,7 +86,7 @@ func (s *Service) FetchAccount(path string) (e2wtypes.Wallet, e2wtypes.Account, 
 	account, exists := s.accounts[path]
 	s.accountsMx.RUnlock()
 	if exists {
-		log.WithField("path", path).Debug("Account found in cache; returning")
+		log.Debug().Str("path", path).Msg("Account found in cache; returning")
 		return wallet, account, nil
 	}
 
@@ -105,7 +105,7 @@ func (s *Service) FetchAccount(path string) (e2wtypes.Wallet, e2wtypes.Account, 
 	s.pubKeyPathsMx.Lock()
 	s.pubKeyPaths[bytesutil.ToBytes48(account.PublicKey().Marshal())] = fmt.Sprintf("%s/%s", wallet.Name(), account.Name())
 	s.pubKeyPathsMx.Unlock()
-	log.WithField("path", path).Debug("Account stored in cache; returning")
+	log.Debug().Str("path", path).Msg("Account stored in cache; returning")
 	return wallet, account, nil
 }
 
@@ -125,7 +125,7 @@ func (s *Service) FetchAccountByKey(pubKey []byte) (e2wtypes.Wallet, e2wtypes.Ac
 		for walletBytes := range store.RetrieveWallets() {
 			wallet, err := walletFromBytes(walletBytes, store, encryptor)
 			if err != nil {
-				log.WithError(err).Warn("Failed to decode wallet")
+				log.Warn().Err(err).Msg("Failed to decode wallet")
 				continue
 			}
 			for account := range wallet.Accounts() {

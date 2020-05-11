@@ -6,7 +6,7 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	filesystem "github.com/wealdtech/go-eth2-wallet-store-filesystem"
 	s3 "github.com/wealdtech/go-eth2-wallet-store-s3"
 	scratch "github.com/wealdtech/go-eth2-wallet-store-scratch"
@@ -27,7 +27,7 @@ func InitStores(ctx context.Context, stores []*Store) ([]e2wtypes.Store, error) 
 	defer span.Finish()
 
 	if len(stores) == 0 {
-		log.Warn("No stores configured; using default")
+		log.Warn().Msg("No stores configured; using default")
 		return initDefaultStores(), nil
 	}
 	res := make([]e2wtypes.Store, 0, len(stores))
@@ -40,17 +40,17 @@ func InitStores(ctx context.Context, stores []*Store) ([]e2wtypes.Store, error) 
 		}
 		switch store.Type {
 		case "filesystem":
-			log.WithField("name", store.Name).Debug("Adding filesystem store")
+			log.Debug().Str("name", store.Name).Msg("Adding filesystem store")
 			res = append(res, filesystem.New(filesystem.WithPassphrase([]byte(store.Passphrase))))
 		case "s3":
-			log.WithField("name", store.Name).Debug("Adding S3 store")
+			log.Debug().Str("name", store.Name).Msg("Adding S3 store")
 			s3Store, err := s3.New(s3.WithPassphrase([]byte(store.Passphrase)))
 			if err != nil {
 				return nil, errors.Wrap(err, fmt.Sprintf("failed to access store %d", i))
 			}
 			res = append(res, s3Store)
 		case "scratch":
-			log.Debug("Adding scratch store")
+			log.Debug().Msg("Adding scratch store")
 			res = append(res, scratch.New())
 		default:
 			return nil, fmt.Errorf("store %d has unhandled type %q", i, store.Type)
