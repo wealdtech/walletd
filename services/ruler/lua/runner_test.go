@@ -23,12 +23,19 @@ func TestStorage(t *testing.T) {
 	fmt.Printf("storageFile is %s\n", storageFile)
 	defer os.Remove(storageFile)
 	err := ioutil.WriteFile(storageFile, []byte(`function approve(request, storage, messages)
-  if storage.slot == nil then
-    storage.slot = 0
+  if storage.anumber == nil then
+    storage.anumber = 1
+    storage.abool = true
+    storage.astring = "echo"
   end
 
-  table.insert(messages, string.format("Function calls: %d", storage.slot))
-  storage.slot = storage.slot + 1
+  table.insert(messages, string.format("The number: %d", storage.anumber))
+  table.insert(messages, string.format("The bool: %t", storage.abool))
+  table.insert(messages, string.format("The string: %s", storage.astring))
+
+  storage.anumber = storage.anumber + 1
+  storage.abool = not storage.abool
+  storage.astring = storage.astring .. " echo"
 
   return "Approved"
 end`), 0644)

@@ -10,35 +10,32 @@ import (
 // Store holds key/value pairs in-memory.
 // This storage is ephemeral; it should not be used for production.
 type Store struct {
-	states   map[string]*core.State
+	data     map[string][]byte
 	statesMx sync.RWMutex
 }
 
 // New creates a new memory storage.
 func New() (*Store, error) {
 	return &Store{
-		states: make(map[string]*core.State),
+		data: make(map[string][]byte),
 	}, nil
 }
 
-// FetchState fetches state for a given key.
-func (s *Store) FetchState(ctx context.Context, key []byte) (*core.State, error) {
+// Fetch fetches a value for a given key.
+func (s *Store) Fetch(ctx context.Context, key []byte) ([]byte, error) {
 	s.statesMx.RLock()
-	state, exists := s.states[string(key)]
+	data, exists := s.data[string(key)]
 	s.statesMx.RUnlock()
 	if !exists {
-		state = core.NewState()
-		s.statesMx.Lock()
-		s.states[string(key)] = state
-		s.statesMx.Unlock()
+		return nil, core.ErrNotFound
 	}
-	return state, nil
+	return data, nil
 }
 
-// StoreState stores state for a given key.
-func (s *Store) StoreState(ctx context.Context, key []byte, state *core.State) error {
+// Store stores a value for a given key.
+func (s *Store) Store(ctx context.Context, key []byte, value []byte) error {
 	s.statesMx.Lock()
-	s.states[string(key)] = state
+	s.data[string(key)] = value
 	s.statesMx.Unlock()
 	return nil
 }

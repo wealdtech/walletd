@@ -42,7 +42,7 @@ func main() {
 		}()
 	}
 
-	runtime.GOMAXPROCS(runtime.NumCPU() * 4)
+	runtime.GOMAXPROCS(runtime.NumCPU() * 8)
 
 	ctx := context.Background()
 	if trace {
@@ -73,10 +73,15 @@ func main() {
 		os.Exit(0)
 	}
 
-	if strings.ToLower(config.Verbosity) == "debug" {
+	switch strings.ToLower(config.Verbosity) {
+	case "debug":
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	} else {
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case "warn", "warning":
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	case "err", "error":
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	case "fatal":
+		zerolog.SetGlobalLevel(zerolog.FatalLevel)
 	}
 
 	permissions, err := core.FetchPermissions()

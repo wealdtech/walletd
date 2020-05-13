@@ -1,11 +1,15 @@
 package lua
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/opentracing/opentracing-go"
+	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
 	"github.com/wealdtech/walletd/core"
 	"github.com/wealdtech/walletd/interceptors"
 	lua "github.com/yuin/gopher-lua"
@@ -13,11 +17,12 @@ import (
 
 // RunRules runs a number of rules and returns a result.
 func (s *Service) RunRules(ctx context.Context,
-	name string,
+	action string,
 	walletName string,
 	accountName string,
 	accountPubKey []byte,
-	populateRequestTable func(*lua.LTable) error) core.RulesResult {
+	req interface{}) core.RulesResult {
+	//	populateRequestTable func(*lua.LTable) error) core.RulesResult {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "ruler.lua.RunRules")
 	defer span.Finish()
 
@@ -28,34 +33,29 @@ func (s *Service) RunRules(ctx context.Context,
 
 	account := fmt.Sprintf("%s/%s", walletName, accountName)
 	log := log.With().Str("account", account).Logger()
-	storeKey := []byte(fmt.Sprintf("%s-%x", name, accountPubKey))
-	rules := s.matchRules(ctx, name, account)
+	rules := s.matchRules(ctx, action, account)
 	now := time.Now().Unix()
 	if len(rules) > 0 {
-		req, err := s.populateReqData(ctx, accountName, accountPubKey, now, populateRequestTable)
+		req, err := s.populateReqData(ctx, accountName, accountPubKey, now, req)
 		if err != nil {
 			log.Warn().Err(err).Msg("Failed to populate request data")
 			return core.FAILED
 		}
 
-		state, err := s.store.FetchState(ctx, storeKey)
+		state, err := s.fetchState(ctx, action, accountPubKey)
 		if err != nil {
 			log.Warn().Err(err).Msg("Failed to fetch state")
 			return core.FAILED
 		}
-		storage := &lua.LTable{}
-		keys, values := state.FetchAll(ctx)
-
-		for i := range keys {
-			storage.RawSet(lua.LString(keys[i]), values[i])
-		}
 		for i := range rules {
-			messages, result := s.runRule(ctx, rules[i], req, storage)
+			messages, result := s.runRule(ctx, rules[i], req, state)
 
 			// Print out any messages from the script.
-			messages.ForEach(func(k lua.LValue, v lua.LValue) {
-				log.Info().Str("rulename", rules[i].Name()).Msg(v.String())
-			})
+			if messages != nil {
+				messages.ForEach(func(k lua.LValue, v lua.LValue) {
+					log.Info().Str("rulename", rules[i].Name()).Msg(v.String())
+				})
+			}
 
 			if result == core.UNKNOWN {
 				log.Warn().Msg("Unknown status from script")
@@ -67,14 +67,8 @@ func (s *Service) RunRules(ctx context.Context,
 				return core.FAILED
 			}
 
-			// Update state with storage.
-			storage.ForEach(func(k, v lua.LValue) {
-				state.Store(ctx, k.String(), v)
-			})
-
 			// Update state prior to continuing.
-			err = s.store.StoreState(ctx, storeKey, state)
-			if err != nil {
+			if err := s.storeState(ctx, action, accountPubKey, state); err != nil {
 				log.Warn().Err(err).Msg("Failed to update state")
 				return core.FAILED
 			}
@@ -87,24 +81,56 @@ func (s *Service) RunRules(ctx context.Context,
 	return core.APPROVED
 }
 
-func (s *Service) populateReqData(ctx context.Context, accountName string, pubKey []byte, now int64, populateRequestTable func(*lua.LTable) error) (*lua.LTable, error) {
-	req := &lua.LTable{}
-	if populateRequestTable != nil {
-		if err := populateRequestTable(req); err != nil {
-			return nil, err
-		}
-	}
-	req.RawSetString("account", lua.LString(accountName))
-	req.RawSetString("pubKey", lua.LString(fmt.Sprintf("%0x", pubKey)))
+func (s *Service) populateReqData(ctx context.Context, accountName string, pubKey []byte, now int64, req interface{}) (*lua.LTable, error) {
+	reqData := &lua.LTable{}
+	reqData.RawSetString("account", lua.LString(accountName))
+	reqData.RawSetString("pubKey", lua.LString(fmt.Sprintf("%0x", pubKey)))
 	if ip, ok := ctx.Value(&interceptors.ExternalIP{}).(string); ok {
-		req.RawSetString("ip", lua.LString(ip))
+		reqData.RawSetString("ip", lua.LString(ip))
 	}
 	if client, ok := ctx.Value(&interceptors.ClientName{}).(string); ok {
-		req.RawSetString("client", lua.LString(client))
+		reqData.RawSetString("client", lua.LString(client))
 	}
-	req.RawSetString("timestamp", lua.LNumber(now))
+	reqData.RawSetString("timestamp", lua.LNumber(now))
+	switch typedReq := req.(type) {
+	case *pb.ListAccountsRequest:
+		s.populateListAccountsReqData(ctx, reqData, typedReq)
+	case *pb.SignRequest:
+		s.populateSignReqData(ctx, reqData, typedReq)
+	case *pb.SignBeaconAttestationRequest:
+		s.populateBeaconAttestationReqData(ctx, reqData, typedReq)
+	case *pb.SignBeaconProposalRequest:
+		s.populateBeaconProposalReqData(ctx, reqData, typedReq)
+	}
 
-	return req, nil
+	return reqData, nil
+}
+
+func (s *Service) populateListAccountsReqData(ctx context.Context, reqData *lua.LTable, req *pb.ListAccountsRequest) {
+}
+
+func (s *Service) populateSignReqData(ctx context.Context, reqData *lua.LTable, req *pb.SignRequest) {
+	reqData.RawSetString("domain", lua.LString(fmt.Sprintf("%0x", req.Domain)))
+	reqData.RawSetString("data", lua.LString(fmt.Sprintf("%0x", req.Data)))
+}
+
+func (s *Service) populateBeaconAttestationReqData(ctx context.Context, reqData *lua.LTable, req *pb.SignBeaconAttestationRequest) {
+	reqData.RawSetString("domain", lua.LString(fmt.Sprintf("%0x", req.Domain)))
+	reqData.RawSetString("slot", lua.LNumber(req.Data.Slot))
+	reqData.RawSetString("committeeIndex", lua.LNumber(req.Data.CommitteeIndex))
+	reqData.RawSetString("sourceEpoch", lua.LNumber(req.Data.Source.Epoch))
+	reqData.RawSetString("sourceRoot", lua.LString(fmt.Sprintf("%0x", req.Data.Source.Root)))
+	reqData.RawSetString("targetEpoch", lua.LNumber(req.Data.Target.Epoch))
+	reqData.RawSetString("targetRoot", lua.LString(fmt.Sprintf("%0x", req.Data.Target.Root)))
+}
+
+func (s *Service) populateBeaconProposalReqData(ctx context.Context, reqData *lua.LTable, req *pb.SignBeaconProposalRequest) {
+	reqData.RawSetString("domain", lua.LString(fmt.Sprintf("%0x", req.Domain)))
+	reqData.RawSetString("slot", lua.LNumber(req.Data.Slot))
+	reqData.RawSetString("proposerIndex", lua.LNumber(req.Data.ProposerIndex))
+	reqData.RawSetString("bodyRoot", lua.LString(fmt.Sprintf("%0x", req.Data.BodyRoot)))
+	reqData.RawSetString("parentRoot", lua.LString(fmt.Sprintf("%0x", req.Data.ParentRoot)))
+	reqData.RawSetString("stateRoot", lua.LString(fmt.Sprintf("%0x", req.Data.StateRoot)))
 }
 
 // matchRules fetches rules that match with the request.
@@ -157,4 +183,68 @@ func (s *Service) runRule(ctx context.Context, rule *core.Rule, req *lua.LTable,
 		log.Warn().Str("approval", approval.String()).Msg("Invalid approval value returned")
 		return messages, core.FAILED
 	}
+}
+
+type stateMap struct {
+	Types  map[string]string
+	Values map[string]string
+}
+
+func (s *Service) fetchState(ctx context.Context, action string, pubKey []byte) (*lua.LTable, error) {
+	state := &lua.LTable{}
+	key := []byte(fmt.Sprintf("%s-%x", action, pubKey))
+	data, err := s.store.Fetch(ctx, key)
+	if err == nil {
+		inMap := &stateMap{}
+		buf := bytes.NewBuffer(data)
+		dec := gob.NewDecoder(buf)
+		err = dec.Decode(inMap)
+		if err != nil {
+			return nil, err
+		}
+		for k, v := range inMap.Types {
+			switch v {
+			case "boolean":
+				switch v {
+				case "true":
+					state.RawSet(lua.LString(k), lua.LTrue)
+				default:
+					state.RawSet(lua.LString(k), lua.LFalse)
+				}
+			case "string":
+				state.RawSet(lua.LString(k), lua.LString(inMap.Values[k]))
+			case "number":
+				val, err := strconv.ParseFloat(inMap.Values[k], 64)
+				if err != nil {
+					return nil, err
+				}
+				state.RawSet(lua.LString(k), lua.LNumber(val))
+			default:
+				log.Warn().Str("key", k).Str("value", v).Msg("Unhandled type")
+			}
+		}
+	} else if err != core.ErrNotFound {
+		return nil, err
+	}
+	return state, nil
+}
+
+func (s *Service) storeState(ctx context.Context, action string, pubKey []byte, state *lua.LTable) error {
+	key := []byte(fmt.Sprintf("%s-%x", action, pubKey))
+
+	outMap := &stateMap{
+		Types:  make(map[string]string),
+		Values: make(map[string]string),
+	}
+	state.ForEach(func(k lua.LValue, v lua.LValue) {
+		outMap.Types[k.String()] = v.Type().String()
+		outMap.Values[k.String()] = v.String()
+	})
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	if err := enc.Encode(outMap); err != nil {
+		return err
+	}
+	value := buf.Bytes()
+	return s.store.Store(ctx, key, value)
 }

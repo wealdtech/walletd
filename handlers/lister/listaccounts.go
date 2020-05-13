@@ -66,7 +66,7 @@ func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest)
 				}
 
 				// Confirm listing of the key.
-				result := h.ruler.RunRules(ctx, "Access account", wallet.Name(), account.Name(), account.PublicKey().Marshal(), nil)
+				result := h.ruler.RunRules(ctx, "Access account", wallet.Name(), account.Name(), account.PublicKey().Marshal(), req)
 				if result == core.APPROVED {
 					res.Accounts = append(res.Accounts, &pb.Account{
 						Name:      fmt.Sprintf("%s/%s", wallet.Name(), account.Name()),

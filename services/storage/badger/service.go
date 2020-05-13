@@ -1,7 +1,6 @@
 package badger
 
 import (
-	"bytes"
 	"context"
 	"encoding/gob"
 
@@ -42,24 +41,22 @@ func New(base string) (*Store, error) {
 	}, nil
 }
 
-// FetchState fetches state for a given key.
-func (s *Store) FetchState(ctx context.Context, key []byte) (*core.State, error) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "storage.badger.FetchState")
+// Fetch fetches a value for a given key.
+func (s *Store) Fetch(ctx context.Context, key []byte) ([]byte, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "storage.badger.Fetch")
 	defer span.Finish()
 
-	state := core.NewState()
+	var value []byte
 	err := s.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
 		if err != nil {
 			if err == badger.ErrKeyNotFound {
-				// No key; leave the state empty.
-				return nil
+				return core.ErrNotFound
 			}
 		}
 		err = item.Value(func(val []byte) error {
-			buf := bytes.NewBuffer(val)
-			dec := gob.NewDecoder(buf)
-			return dec.Decode(&state)
+			value = val
+			return nil
 		})
 		if err != nil {
 			return err
@@ -70,20 +67,14 @@ func (s *Store) FetchState(ctx context.Context, key []byte) (*core.State, error)
 	if err != nil {
 		return nil, err
 	}
-	return state, nil
+	return value, nil
 }
 
-// StoreState stores state for a given key.
-func (s *Store) StoreState(ctx context.Context, key []byte, state *core.State) error {
-	span, _ := opentracing.StartSpanFromContext(ctx, "storage.badger.StoreState")
+// Store stores the value for a given key.
+func (s *Store) Store(ctx context.Context, key []byte, value []byte) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "storage.badger.Store")
 	defer span.Finish()
 
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	if err := enc.Encode(state); err != nil {
-		return err
-	}
-	value := buf.Bytes()
 	return s.db.Update(func(txn *badger.Txn) error {
 		return txn.Set(key, value)
 	})

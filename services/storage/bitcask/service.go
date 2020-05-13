@@ -1,7 +1,6 @@
 package bitcask
 
 import (
-	"bytes"
 	"encoding/gob"
 	"path/filepath"
 
@@ -34,34 +33,20 @@ func New(base string) (*Store, error) {
 	}, nil
 }
 
-// FetchState fetches state for a given key.
-func (s *Store) FetchState(key []byte) (*core.State, error) {
-	state := core.NewState()
-	val, err := s.db.Get(key)
+// Fetch fetches the value for a given key.
+func (s *Store) Fetch(key []byte) ([]byte, error) {
+	value, err := s.db.Get(key)
 	if err != nil {
 		if err == bitcask.ErrKeyNotFound {
-			// No key; leave the state empty.
-			return state, nil
+			return nil, core.ErrNotFound
 		}
 		return nil, err
 	}
-	buf := bytes.NewBuffer(val)
-	dec := gob.NewDecoder(buf)
-	err = dec.Decode(&state)
-	if err != nil {
-		return nil, err
-	}
-	return state, nil
+	return value, nil
 }
 
-// StoreState stores state for a given key.
-func (s *Store) StoreState(key []byte, state *core.State) error {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	if err := enc.Encode(state); err != nil {
-		return err
-	}
-	value := buf.Bytes()
+// Store stores the value for a given key.
+func (s *Store) Store(key []byte, value []byte) error {
 	if err := s.db.Put(key, value); err != nil {
 		return err
 	}

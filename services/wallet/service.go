@@ -28,6 +28,8 @@ import (
 	"github.com/wealdtech/walletd/services/checker"
 	"github.com/wealdtech/walletd/services/fetcher/memfetcher"
 	"github.com/wealdtech/walletd/services/locker"
+	"github.com/wealdtech/walletd/services/ruler"
+	"github.com/wealdtech/walletd/services/ruler/golang"
 	"github.com/wealdtech/walletd/services/ruler/lua"
 	"github.com/wealdtech/walletd/services/storage/badger"
 	"github.com/wealdtech/walletd/util"
@@ -74,7 +76,14 @@ func (s *Service) ServeGRPC(ctx context.Context, config *core.ServerConfig) erro
 		return err
 	}
 
-	ruler, err := lua.New(locker, store, s.rules)
+	var ruler ruler.Service
+	if len(s.rules) > 0 {
+		log.Info().Int("rules", len(s.rules)).Msg("Enabling rule scripts")
+		ruler, err = lua.New(locker, store, s.rules)
+	} else {
+		log.Info().Msg("Enabling static rules")
+		ruler, err = golang.New(locker, store)
+	}
 	if err != nil {
 		return err
 	}

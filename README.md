@@ -231,11 +231,35 @@ $ ethdo --remote=server.example.com:12346 --client-cert=client3.crt --client-key
 
 At this point it has been confirmed that the client certificates operate as expected, and that walletd is appropriately configured.  The client certificates can now be used by validators to remotely access their keys.
 
-## Custom rules
+## Rules
 
-`walletd` comes with a rules engine that allows users to create their own set of conditions under which actions can take place (or not).  Whenever a request is sent to `walletd` it runs rules based on the request and account carrying out the request.
+`walletd` has two rule systems that allow users to define when signing can take place.  Rules have two main purposes:
 
-## Writing rule scripts
+  1. ensure that only the relevant client has access to their keys
+  2. avoid duplicate signings which could cause slashing events
+
+### Static rules
+
+`walletd` has a set of static rules that can be defined within the code.  These rules are run whenever one of the following actions are requested:
+
+  - list accounts
+  - sign data
+  - sign a beacon node attestation
+  - sign a beacon node proposal
+
+Static rules are fast, and have higher security due to being part of the `walletd` binary, but require knowledge of the Go language to build and maintain.
+
+Skeleton static rules can be found [in the repository](https://github.com/wealdtech/walletd/tree/master/services/ruler/golang)
+
+### Rule scripts
+
+It is possible that static rules do not meet requirements, in which case rule scripts can be used instead.  `walletd` comes with a rules engine that allows users to create their own set of conditions under which actions can take place (or not).  Whenever a request is sent to `walletd` it runs rules based on the request and account carrying out the request.
+
+Rule scripts are somewhat slower than static rules, and are easier for an attacker to see how the rules operate, but are easier to build and maintain.
+
+It is up to the user to decide if they want to use static rules or rule scripts in their environment.
+
+### Writing rule scripts
 
 Rule scripts are written in the lua language.  A script must contain an `approve()` function that takes the following parameters:
 
@@ -264,49 +288,26 @@ end
 
 This ensures that any attempt to sign a beacon block proposal whose slot is equal to or lower than a previously successful signature will be denied.
 
-## Configuring rules
+### Configuring rule scripts
 
 Rule information is configured in the `config.json` file under a `rules` entry.
 Multiple rules can match a single script.  In this situation all scripts are run one after the other, with a requirement for all scripts to return `Approved` before signing can proceed.
 
-A sample `config.json` with rules may look like the below:
+A sample `config.json` that applies the above script for signing beacon proposals is shown below:
 
 ```json
 {
   "rules": [
     {
-      "name": "Signer",
-      "request": "sign",
-      "account": "TODO",
-      "script": "sign.lua"
+      "name": "Check beacon proposal",
+      "request": "Sign beacon proposal",
+      "script": "sign_beacon_proposal.lua"
     }
   ]
 }
 ```
 
-### Stores
-
-### Rules
-
-Each time a signing request is sent to walletd it has the option to run a number of rules prior to signing the requested data.
-
-  - request:
-    - sign: general signing request
-    - sign beacon proposal: sign a block proposal for the beacon chain
-    - sign beacon attestation: sign a block attestation for the beacon chain
-  - account:
-
-### Scripts
-
-Scripts are stored in the `scripts` directory of the default configuration location.  Scripts are written in the lua language.  A script must contain an `approve()` function that takes the parameters `request` and `storage`.  `request` contains information about the signing request, and `storage` contains persistent storage specific to the request and requesting account.
-
-The `approve()` script should return one of the following three values:
-
-  - `Approved` the signing can proceed
-  - `Denied` the signing must not proceed
-  - `Failed` the attempt to decide if the signing should go ahead or not has failed (which also implies that the signing must not proceed)
-
-Multiple rules can match a single script.  In this situation all scripts are run one after the other, with a requirement for all scripts to return `Approved` before signing can proceed.
+Note this assumes the script above has been stored in the `scripts` directory as `sign_beacon_proposal.lua`.  Empty scripts, detailing the parameters that are available for each, are available in [the repository scripts directory](https://github.com/wealdtech/walletd/tree/master/scripts).
 
 ## Maintainers
 

@@ -3,12 +3,11 @@ package signer
 import (
 	context "context"
 	"encoding/hex"
-	"fmt"
 
 	"github.com/opentracing/opentracing-go"
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
 	"github.com/wealdtech/walletd/core"
-	lua "github.com/yuin/gopher-lua"
+	"github.com/wealdtech/walletd/services/ruler"
 )
 
 // Checkpoint is a copy of the Ethereum 2 Checkpoint struct with SSZ size information.
@@ -77,22 +76,7 @@ func (h *Handler) SignBeaconAttestation(ctx context.Context, req *pb.SignBeaconA
 	}
 
 	// Confirm approval via rules.
-	result := h.ruler.RunRules(
-		ctx,
-		"sign beacon attestation",
-		wallet.Name(),
-		account.Name(),
-		account.PublicKey().Marshal(),
-		func(table *lua.LTable) error {
-			table.RawSetString("domain", lua.LString(fmt.Sprintf("%0x", req.Domain)))
-			table.RawSetString("slot", lua.LNumber(req.Data.Slot))
-			table.RawSetString("committeeIndex", lua.LNumber(req.Data.CommitteeIndex))
-			table.RawSetString("sourceEpoch", lua.LNumber(req.Data.Source.Epoch))
-			table.RawSetString("sourceRoot", lua.LString(fmt.Sprintf("%0x", req.Data.Source.Root)))
-			table.RawSetString("targetEpoch", lua.LNumber(req.Data.Target.Epoch))
-			table.RawSetString("targetRoot", lua.LString(fmt.Sprintf("%0x", req.Data.Target.Root)))
-			return nil
-		})
+	result := h.ruler.RunRules(ctx, ruler.ActionSignBeaconAttestation, wallet.Name(), account.Name(), account.PublicKey().Marshal(), req)
 	switch result {
 	case core.APPROVED:
 		res.State = pb.ResponseState_SUCCEEDED

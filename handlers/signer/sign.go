@@ -7,7 +7,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
 	"github.com/wealdtech/walletd/core"
-	lua "github.com/yuin/gopher-lua"
+	"github.com/wealdtech/walletd/services/ruler"
 )
 
 // Sign signs data.
@@ -62,17 +62,7 @@ func (h *Handler) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespon
 	}
 
 	// Confirm approval via rules.
-	result := h.ruler.RunRules(
-		ctx,
-		"sign",
-		wallet.Name(),
-		account.Name(),
-		account.PublicKey().Marshal(),
-		func(table *lua.LTable) error {
-			table.RawSetString("domain", lua.LString(hex.EncodeToString(req.Domain)))
-			table.RawSetString("data", lua.LString(hex.EncodeToString(req.Data)))
-			return nil
-		})
+	result := h.ruler.RunRules(ctx, ruler.ActionSign, wallet.Name(), account.Name(), account.PublicKey().Marshal(), req)
 	switch result {
 	case core.APPROVED:
 		res.State = pb.ResponseState_SUCCEEDED
