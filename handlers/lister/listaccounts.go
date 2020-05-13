@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
-	e2wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
 	"github.com/wealdtech/walletd/core"
 	"github.com/wealdtech/walletd/interceptors"
+	"github.com/wealdtech/walletd/services/ruler"
 	"github.com/wealdtech/walletd/util"
 )
 
@@ -54,23 +54,25 @@ func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest)
 
 		for account := range wallet.Accounts() {
 			if accountRegex.Match([]byte(account.Name())) {
-				// Confirm access to the key
-				ok, err := h.checkClientAccess(ctx, wallet, account, "Access account")
+				accountName := fmt.Sprintf("%s/%s", wallet.Name(), account.Name())
+				// Confirm access to the key.
+				ok, err := h.checkClientAccess(ctx, accountName, ruler.ActionAccessAccount)
 				if err != nil {
-					log.Warn().Err(err).Msg("Failed to check account")
+					log.Warn().Err(err).Msg("Failed to check account for access")
 					continue
 				}
 				if !ok {
-					// Not allowed
+					// Not allowed.
 					continue
 				}
 
 				// Confirm listing of the key.
-				result := h.ruler.RunRules(ctx, "Access account", wallet.Name(), account.Name(), account.PublicKey().Marshal(), req)
+				pubKey := account.PublicKey().Marshal()
+				result := h.ruler.RunRules(ctx, ruler.ActionAccessAccount, wallet.Name(), account.Name(), pubKey, req)
 				if result == core.APPROVED {
 					res.Accounts = append(res.Accounts, &pb.Account{
-						Name:      fmt.Sprintf("%s/%s", wallet.Name(), account.Name()),
-						PublicKey: account.PublicKey().Marshal(),
+						Name:      accountName,
+						PublicKey: pubKey,
 					})
 				}
 			}
@@ -83,12 +85,11 @@ func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest)
 }
 
 // checkClientAccess returns true if the client can access the account.
-func (h *Handler) checkClientAccess(ctx context.Context, wallet e2wtypes.Wallet, account e2wtypes.Account, operation string) (bool, error) {
+func (h *Handler) checkClientAccess(ctx context.Context, accountName string, operation string) (bool, error) {
 	client := ""
 	val := ctx.Value(&interceptors.ClientName{})
 	if val != nil {
 		client = val.(string)
 	}
-	accountName := fmt.Sprintf("%s/%s", wallet.Name(), account.Name())
-	return h.checker.Check(ctx, string(client), accountName, operation), nil
+	return h.checker.Check(ctx, client, accountName, operation), nil
 }

@@ -3,6 +3,7 @@ package signer
 import (
 	context "context"
 	"encoding/hex"
+	"fmt"
 
 	"github.com/opentracing/opentracing-go"
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
@@ -33,7 +34,8 @@ func (h *Handler) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignRespon
 	}
 
 	// Ensure this account is accessible by this client.
-	ok, err := h.checkClientAccess(ctx, wallet, account, "Sign")
+	accountName := fmt.Sprintf("%s/%s", wallet.Name(), account.Name())
+	ok, err := h.checkClientAccess(ctx, accountName, ruler.ActionSign)
 	if err != nil {
 		log.Warn().Err(err).Str("result", "failed").Msg("Check client access failed")
 		res.State = pb.ResponseState_FAILED

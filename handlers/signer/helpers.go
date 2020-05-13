@@ -3,7 +3,6 @@ package signer
 import (
 	context "context"
 	"errors"
-	"fmt"
 
 	"github.com/opentracing/opentracing-go"
 	e2wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
@@ -22,7 +21,7 @@ func (h *Handler) fetchAccount(ctx context.Context, name string, pubKey []byte) 
 }
 
 // checkClientAccess returns true if the client can access the account.
-func (h *Handler) checkClientAccess(ctx context.Context, wallet e2wtypes.Wallet, account e2wtypes.Account, operation string) (bool, error) {
+func (h *Handler) checkClientAccess(ctx context.Context, accountName string, operation string) (bool, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "handlers.signer.checkClientAccess")
 	defer span.Finish()
 
@@ -30,6 +29,5 @@ func (h *Handler) checkClientAccess(ctx context.Context, wallet e2wtypes.Wallet,
 	if !ok {
 		return false, errors.New("no client certificate name")
 	}
-	accountName := fmt.Sprintf("%s/%s", wallet.Name(), account.Name())
 	return h.checker.Check(ctx, string(client), accountName, operation), nil
 }
