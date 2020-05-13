@@ -11,22 +11,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dummy
+package mock
 
 import (
 	"context"
 	"strings"
 )
 
-// DummyChecker returns true all clients and accounts except those that start with "Deny".  Only for testing.
-type DummyChecker struct{}
+// MockChecker returns true all clients and accounts except those that start with "Deny".
+type MockChecker struct{}
 
-// New creates a new dummy checker.
-func New() (*DummyChecker, error) {
-	return &DummyChecker{}, nil
+// New creates a new mock checker.
+func New() (*MockChecker, error) {
+	return &MockChecker{}, nil
 }
 
 // Check returns true.
-func (c *DummyChecker) Check(ctx context.Context, client string, account string, operation string) bool {
+func (c *MockChecker) Check(ctx context.Context, client string, account string, operation string) bool {
 	return !(strings.HasPrefix(client, "Deny") || strings.Contains(account, "/Deny"))
 }

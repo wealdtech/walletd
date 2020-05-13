@@ -29,7 +29,7 @@ import (
 	"github.com/wealdtech/walletd/core"
 	"github.com/wealdtech/walletd/handlers/lister"
 	"github.com/wealdtech/walletd/interceptors"
-	"github.com/wealdtech/walletd/services/checker/dummy"
+	"github.com/wealdtech/walletd/services/checker/mock"
 	"github.com/wealdtech/walletd/services/fetcher/memfetcher"
 	"github.com/wealdtech/walletd/services/locker"
 	"github.com/wealdtech/walletd/services/ruler/lua"
@@ -170,7 +170,7 @@ func Setup() (*lister.Handler, error) {
 		return nil, err
 	}
 
-	checker, err := dummy.New()
+	checker, err := mock.New()
 	if err != nil {
 		return nil, err
 	}

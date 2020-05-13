@@ -15,6 +15,7 @@ package keys
 
 import (
 	"context"
+	"errors"
 
 	"github.com/opentracing/opentracing-go"
 	e2wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
@@ -45,6 +46,11 @@ func New(ctx context.Context, config *core.KeysConfig) (*Service, error) {
 func (s *Service) Unlock(ctx context.Context, wallet e2wtypes.Wallet, account e2wtypes.Account) (bool, error) {
 	span, _ := opentracing.StartSpanFromContext(ctx, "autounlocker.keys.Unlock")
 	defer span.Finish()
+
+	if account == nil {
+		return false, errors.New("no account supplied")
+	}
+
 	for _, passphrase := range s.passphrases {
 		if err := account.Unlock(passphrase); err == nil {
 			return true, nil
