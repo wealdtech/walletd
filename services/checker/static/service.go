@@ -9,6 +9,7 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/wealdtech/walletd/core"
+	"github.com/wealdtech/walletd/util"
 )
 
 // StaticChecker checks against a static list.
@@ -47,10 +48,7 @@ func New(ctx context.Context, config *core.Permissions) (*StaticChecker, error) 
 		}
 		paths := make([]*path, len(certificateInfo.Perms))
 		for i, permissions := range certificateInfo.Perms {
-			if permissions.Path == "" {
-				return nil, errors.New("permission path cannot be blank")
-			}
-			walletName, accountName, err := walletAndAccountNamesFromPath(permissions.Path)
+			walletName, accountName, err := util.WalletAndAccountNamesFromPath(permissions.Path)
 			if err != nil {
 				return nil, fmt.Errorf("invalid account path %s", permissions.Path)
 			}
@@ -89,7 +87,7 @@ func (c *StaticChecker) Check(ctx context.Context, client string, account string
 	}
 	log := log.With().Str("client", client).Str("account", account).Logger()
 
-	walletName, accountName, err := walletAndAccountNamesFromPath(account)
+	walletName, accountName, err := util.WalletAndAccountNamesFromPath(account)
 	if err != nil {
 		log.Debug().Err(err).Msg("Invalid path")
 		return false
@@ -119,23 +117,6 @@ func (c *StaticChecker) Check(ctx context.Context, client string, account string
 		}
 	}
 	return false
-}
-
-// walletAndAccountNamesFromPath is a helper that breaks out a path's components.
-func walletAndAccountNamesFromPath(path string) (string, string, error) {
-	if len(path) == 0 {
-		return "", "", errors.New("invalid account format")
-	}
-	index := strings.Index(path, "/")
-	if index == -1 {
-		// Just the wallet
-		return path, "", nil
-	}
-	if index == len(path)-1 {
-		// Trailing /
-		return path[:index], "", nil
-	}
-	return path[:index], path[index+1:], nil
 }
 
 func regexify(name string) (*regexp.Regexp, error) {

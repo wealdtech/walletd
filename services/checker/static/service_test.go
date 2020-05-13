@@ -26,6 +26,11 @@ func TestNew(t *testing.T) {
 			err:   "certificates are required",
 		},
 		{
+			name:  "CertListInfo",
+			perms: &core.Permissions{Certs: []*core.CertificateInfo{}},
+			err:   "certificate info empty",
+		},
+		{
 			name:  "CertInfoEmpty",
 			perms: &core.Permissions{Certs: []*core.CertificateInfo{{}}},
 			err:   "certificate info requires a name",
@@ -36,9 +41,9 @@ func TestNew(t *testing.T) {
 			err:   "certificate info requires at least one permission",
 		},
 		{
-			name:  "CertInfoBadPath",
+			name:  "CertInfoEmptyPath",
 			perms: &core.Permissions{Certs: []*core.CertificateInfo{{Name: "test", Perms: []*core.CertificatePerms{{}}}}},
-			err:   "permission path cannot be blank",
+			err:   "invalid account path ",
 		},
 		{
 			name:  "CertInfoBadWallet",

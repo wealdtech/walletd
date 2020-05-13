@@ -15,6 +15,7 @@ import (
 	e2wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
 	"github.com/wealdtech/walletd/core"
 	"github.com/wealdtech/walletd/handlers/lister"
+	"github.com/wealdtech/walletd/interceptors"
 	"github.com/wealdtech/walletd/services/checker/dummy"
 	"github.com/wealdtech/walletd/services/fetcher/memfetcher"
 	"github.com/wealdtech/walletd/services/locker"
@@ -32,44 +33,59 @@ func TestMain(m *testing.M) {
 func TestListAccounts(t *testing.T) {
 	tests := []struct {
 		name     string
+		client   string
 		paths    []string
 		err      string
 		accounts []string
 	}{
 		{
-			name:  "Missing",
-			paths: []string{},
+			name:   "Missing",
+			client: "Valid client",
+			paths:  []string{},
 		},
 		{
-			name:  "Empty",
-			paths: []string{""},
+			name:   "Empty",
+			client: "Valid client",
+			paths:  []string{""},
 		},
 		{
-			name:  "NoWallet",
-			paths: []string{"/Account"},
+			name:   "NoWallet",
+			client: "Valid client",
+			paths:  []string{"/Account"},
 		},
 		{
 			name:     "UnknownWallet",
+			client:   "Valid client",
 			paths:    []string{"Unknown/.*"},
 			accounts: []string{},
 		},
 		{
 			name:     "UnknownPath",
+			client:   "Valid client",
 			paths:    []string{"Wallet 1/nothinghere"},
 			accounts: []string{},
 		},
 		{
 			name:     "BadPath",
+			client:   "Valid client",
 			paths:    []string{"Wallet 1/.***"},
 			accounts: []string{},
 		},
 		{
 			name:     "All",
+			client:   "Valid client",
 			paths:    []string{"Wallet 1"},
 			accounts: []string{"Account 1", "Account 2", "Account 3", "Account 4", "A different account"},
 		},
 		{
+			name:     "DeniedClient",
+			client:   "Deny this client",
+			paths:    []string{"Wallet 1"},
+			accounts: []string{},
+		},
+		{
 			name:     "Subset",
+			client:   "Valid client",
 			paths:    []string{"Wallet 1/Account [0-9]+"},
 			accounts: []string{"Account 1", "Account 2", "Account 3", "Account 4"},
 		},
@@ -81,7 +97,8 @@ func TestListAccounts(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req := &pb.ListAccountsRequest{Paths: test.paths}
-			resp, err := handler.ListAccounts(context.Background(), req)
+			ctx := context.WithValue(context.Background(), &interceptors.ClientName{}, test.client)
+			resp, err := handler.ListAccounts(ctx, req)
 			if test.err == "" {
 				// Result expected.
 				require.Nil(t, err)
@@ -113,6 +130,7 @@ func Setup() (*lister.Handler, error) {
 		"Account 3",
 		"Account 4",
 		"A different account",
+		"Deny this account",
 	}
 	for _, account := range accounts {
 		if _, err := wallet1.CreateAccount(account, []byte(account+" passphrase")); err != nil {
