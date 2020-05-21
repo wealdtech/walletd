@@ -27,7 +27,7 @@ go get github.com/wealdtech/walletd
 
 ## Usage
 
-`walletd` provies a gRPC interface to wallet operations such as listing accounts and signing requests.  The daemon provides a number of security measures to avoid unauthorised uses of the private keys, and protection against invalid actions (_e.g._ slashing events).
+`walletd` provides a gRPC interface to wallet operations such as listing accounts and signing requests.  The daemon provides a number of security measures to avoid unauthorised uses of the private keys, and protection against invalid actions (_e.g._ slashing events).
 
 ## Architecture
 
