@@ -22,6 +22,7 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/wealdtech/walletd/core"
+	"github.com/wealdtech/walletd/services/checker"
 	"github.com/wealdtech/walletd/util"
 )
 
@@ -90,15 +91,19 @@ func New(ctx context.Context, config *core.Permissions) (*StaticChecker, error) 
 }
 
 // Check checks the client to see if the account is allowed.
-func (c *StaticChecker) Check(ctx context.Context, client string, account string, operation string) bool {
+func (c *StaticChecker) Check(ctx context.Context, credentials *checker.Credentials, account string, operation string) bool {
 	span, _ := opentracing.StartSpanFromContext(ctx, "checker.static.Check")
 	defer span.Finish()
 
-	if client == "" {
-		log.Info().Msg("No client certificate name")
+	if credentials == nil {
+		log.Info().Msg("No credentials")
 		return false
 	}
-	log := log.With().Str("client", client).Str("account", account).Logger()
+	if credentials.Client == "" {
+		log.Info().Msg("No client name")
+		return false
+	}
+	log := log.With().Str("client", credentials.Client).Str("account", account).Logger()
 
 	walletName, accountName, err := util.WalletAndAccountNamesFromPath(account)
 	if err != nil {
@@ -114,7 +119,7 @@ func (c *StaticChecker) Check(ctx context.Context, client string, account string
 		return false
 	}
 
-	paths, exists := c.access[client]
+	paths, exists := c.access[credentials.Client]
 	if !exists {
 		log.Debug().Msg("Unknown client")
 		return false

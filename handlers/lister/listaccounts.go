@@ -22,6 +22,7 @@ import (
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
 	"github.com/wealdtech/walletd/core"
 	"github.com/wealdtech/walletd/interceptors"
+	"github.com/wealdtech/walletd/services/checker"
 	"github.com/wealdtech/walletd/services/ruler"
 	"github.com/wealdtech/walletd/util"
 )
@@ -104,5 +105,5 @@ func (h *Handler) checkClientAccess(ctx context.Context, accountName string, ope
 	if val != nil {
 		client = val.(string)
 	}
-	return h.checker.Check(ctx, client, accountName, operation), nil
+	return h.checker.Check(ctx, &checker.Credentials{Client: client}, accountName, operation), nil
 }

@@ -16,6 +16,8 @@ package mock
 import (
 	"context"
 	"strings"
+
+	"github.com/wealdtech/walletd/services/checker"
 )
 
 // MockChecker returns true all clients and accounts except those that start with "Deny".
@@ -27,6 +29,6 @@ func New() (*MockChecker, error) {
 }
 
 // Check returns true.
-func (c *MockChecker) Check(ctx context.Context, client string, account string, operation string) bool {
-	return !(strings.HasPrefix(client, "Deny") || strings.Contains(account, "/Deny"))
+func (c *MockChecker) Check(ctx context.Context, credentials *checker.Credentials, account string, operation string) bool {
+	return !(strings.HasPrefix(credentials.Client, "Deny") || strings.Contains(account, "/Deny"))
 }

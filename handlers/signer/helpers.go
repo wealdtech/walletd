@@ -20,6 +20,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	e2wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
 	"github.com/wealdtech/walletd/interceptors"
+	"github.com/wealdtech/walletd/services/checker"
 )
 
 // fetchAccount is a utility that fetches an account from either account name or public key.
@@ -42,5 +43,5 @@ func (h *Handler) checkClientAccess(ctx context.Context, accountName string, ope
 	if !ok {
 		return false, errors.New("no client certificate name")
 	}
-	return h.checker.Check(ctx, string(client), accountName, operation), nil
+	return h.checker.Check(ctx, &checker.Credentials{Client: client}, accountName, operation), nil
 }

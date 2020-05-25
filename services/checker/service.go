@@ -15,7 +15,13 @@ package checker
 
 import "context"
 
+// Credentials are the credentials used to check.
+type Credentials struct {
+	// Client is the authenticated client.
+	Client string
+}
+
 // Service is the interface for checking client access to accounts.
 type Service interface {
-	Check(ctx context.Context, client string, account string, operation string) bool
+	Check(ctx context.Context, credentials *Credentials, account string, operation string) bool
 }
