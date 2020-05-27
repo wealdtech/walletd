@@ -64,6 +64,7 @@ type SignBeaconProposalData struct {
 
 // AccessAccountData is passed to 'AccessAccount' ruler requests.
 type AccessAccountData struct {
+	Paths []string
 }
 
 // Service provides an interface to check requests against a rules engine.

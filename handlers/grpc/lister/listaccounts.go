@@ -82,7 +82,10 @@ func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest)
 
 				// Confirm listing of the key.
 				pubKey := account.PublicKey().Marshal()
-				result := h.ruler.RunRules(ctx, ruler.ActionAccessAccount, wallet.Name(), account.Name(), pubKey, req)
+				data := &ruler.AccessAccountData{
+					Paths: req.Paths,
+				}
+				result := h.ruler.RunRules(ctx, ruler.ActionAccessAccount, wallet.Name(), account.Name(), pubKey, data)
 				if result == core.APPROVED {
 					res.Accounts = append(res.Accounts, &pb.Account{
 						Name:      accountName,
