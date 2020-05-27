@@ -22,9 +22,9 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go"
-	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
 	"github.com/wealdtech/walletd/core"
 	"github.com/wealdtech/walletd/interceptors"
+	"github.com/wealdtech/walletd/services/ruler"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -106,44 +106,44 @@ func (s *Service) populateReqData(ctx context.Context, accountName string, pubKe
 	}
 	reqData.RawSetString("timestamp", lua.LNumber(now))
 	switch typedReq := req.(type) {
-	case *pb.ListAccountsRequest:
+	case *ruler.AccessAccountData:
 		s.populateListAccountsReqData(ctx, reqData, typedReq)
-	case *pb.SignRequest:
+	case *ruler.SignData:
 		s.populateSignReqData(ctx, reqData, typedReq)
-	case *pb.SignBeaconAttestationRequest:
+	case *ruler.SignBeaconAttestationData:
 		s.populateBeaconAttestationReqData(ctx, reqData, typedReq)
-	case *pb.SignBeaconProposalRequest:
+	case *ruler.SignBeaconProposalData:
 		s.populateBeaconProposalReqData(ctx, reqData, typedReq)
 	}
 
 	return reqData, nil
 }
 
-func (s *Service) populateListAccountsReqData(ctx context.Context, reqData *lua.LTable, req *pb.ListAccountsRequest) {
+func (s *Service) populateListAccountsReqData(ctx context.Context, reqData *lua.LTable, req *ruler.AccessAccountData) {
 }
 
-func (s *Service) populateSignReqData(ctx context.Context, reqData *lua.LTable, req *pb.SignRequest) {
+func (s *Service) populateSignReqData(ctx context.Context, reqData *lua.LTable, req *ruler.SignData) {
 	reqData.RawSetString("domain", lua.LString(fmt.Sprintf("%0x", req.Domain)))
 	reqData.RawSetString("data", lua.LString(fmt.Sprintf("%0x", req.Data)))
 }
 
-func (s *Service) populateBeaconAttestationReqData(ctx context.Context, reqData *lua.LTable, req *pb.SignBeaconAttestationRequest) {
+func (s *Service) populateBeaconAttestationReqData(ctx context.Context, reqData *lua.LTable, req *ruler.SignBeaconAttestationData) {
 	reqData.RawSetString("domain", lua.LString(fmt.Sprintf("%0x", req.Domain)))
-	reqData.RawSetString("slot", lua.LNumber(req.Data.Slot))
-	reqData.RawSetString("committeeIndex", lua.LNumber(req.Data.CommitteeIndex))
-	reqData.RawSetString("sourceEpoch", lua.LNumber(req.Data.Source.Epoch))
-	reqData.RawSetString("sourceRoot", lua.LString(fmt.Sprintf("%0x", req.Data.Source.Root)))
-	reqData.RawSetString("targetEpoch", lua.LNumber(req.Data.Target.Epoch))
-	reqData.RawSetString("targetRoot", lua.LString(fmt.Sprintf("%0x", req.Data.Target.Root)))
+	reqData.RawSetString("slot", lua.LNumber(req.Slot))
+	reqData.RawSetString("committeeIndex", lua.LNumber(req.CommitteeIndex))
+	reqData.RawSetString("sourceEpoch", lua.LNumber(req.Source.Epoch))
+	reqData.RawSetString("sourceRoot", lua.LString(fmt.Sprintf("%0x", req.Source.Root)))
+	reqData.RawSetString("targetEpoch", lua.LNumber(req.Target.Epoch))
+	reqData.RawSetString("targetRoot", lua.LString(fmt.Sprintf("%0x", req.Target.Root)))
 }
 
-func (s *Service) populateBeaconProposalReqData(ctx context.Context, reqData *lua.LTable, req *pb.SignBeaconProposalRequest) {
+func (s *Service) populateBeaconProposalReqData(ctx context.Context, reqData *lua.LTable, req *ruler.SignBeaconProposalData) {
 	reqData.RawSetString("domain", lua.LString(fmt.Sprintf("%0x", req.Domain)))
-	reqData.RawSetString("slot", lua.LNumber(req.Data.Slot))
-	reqData.RawSetString("proposerIndex", lua.LNumber(req.Data.ProposerIndex))
-	reqData.RawSetString("bodyRoot", lua.LString(fmt.Sprintf("%0x", req.Data.BodyRoot)))
-	reqData.RawSetString("parentRoot", lua.LString(fmt.Sprintf("%0x", req.Data.ParentRoot)))
-	reqData.RawSetString("stateRoot", lua.LString(fmt.Sprintf("%0x", req.Data.StateRoot)))
+	reqData.RawSetString("slot", lua.LNumber(req.Slot))
+	reqData.RawSetString("proposerIndex", lua.LNumber(req.ProposerIndex))
+	reqData.RawSetString("bodyRoot", lua.LString(fmt.Sprintf("%0x", req.BodyRoot)))
+	reqData.RawSetString("parentRoot", lua.LString(fmt.Sprintf("%0x", req.ParentRoot)))
+	reqData.RawSetString("stateRoot", lua.LString(fmt.Sprintf("%0x", req.StateRoot)))
 }
 
 // matchRules fetches rules that match with the request.

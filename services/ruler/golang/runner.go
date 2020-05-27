@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	"github.com/opentracing/opentracing-go"
-	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
 	"github.com/wealdtech/walletd/core"
 	"github.com/wealdtech/walletd/interceptors"
 	"github.com/wealdtech/walletd/services/ruler"
@@ -46,13 +45,13 @@ func (s *Service) RunRules(ctx context.Context,
 	var result core.RulesResult
 	switch action {
 	case ruler.ActionSign:
-		result = s.runSignRule(ctx, metadata, req.(*pb.SignRequest))
+		result = s.runSignRule(ctx, metadata, req.(*ruler.SignData))
 	case ruler.ActionSignBeaconProposal:
-		result = s.runSignBeaconProposalRule(ctx, metadata, req.(*pb.SignBeaconProposalRequest))
+		result = s.runSignBeaconProposalRule(ctx, metadata, req.(*ruler.SignBeaconProposalData))
 	case ruler.ActionSignBeaconAttestation:
-		result = s.runSignBeaconAttestationRule(ctx, metadata, req.(*pb.SignBeaconAttestationRequest))
+		result = s.runSignBeaconAttestationRule(ctx, metadata, req.(*ruler.SignBeaconAttestationData))
 	case ruler.ActionAccessAccount:
-		result = s.runListAccountsRule(ctx, metadata, req.(*pb.ListAccountsRequest))
+		result = s.runListAccountsRule(ctx, metadata, req.(*ruler.AccessAccountData))
 	}
 
 	if result == core.UNKNOWN {

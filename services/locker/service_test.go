@@ -46,3 +46,12 @@ func TestLocking(t *testing.T) {
 
 	assert.Equal(t, 16*1024, counter)
 }
+
+func TestBadUnlock(t *testing.T) {
+	locker, err := locker.New()
+	require.Nil(t, err)
+
+	testKey := [48]byte{}
+
+	assert.Panics(t, func() { locker.Unlock(testKey) })
+}

@@ -119,6 +119,12 @@ func TestCheck(t *testing.T) {
 			result:      false,
 		},
 		{
+			name:        "NoClient",
+			credentials: &checker.Credentials{},
+			account:     "",
+			result:      false,
+		},
+		{
 			name:        "EmptyAccount",
 			credentials: &checker.Credentials{Client: "client1"},
 			account:     "",

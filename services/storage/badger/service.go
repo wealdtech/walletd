@@ -16,6 +16,7 @@ package badger
 import (
 	"context"
 	"encoding/gob"
+	"errors"
 
 	badger "github.com/dgraph-io/badger/v2"
 	"github.com/dgraph-io/badger/v2/options"
@@ -59,6 +60,10 @@ func (s *Store) Fetch(ctx context.Context, key []byte) ([]byte, error) {
 	span, _ := opentracing.StartSpanFromContext(ctx, "storage.badger.Fetch")
 	defer span.Finish()
 
+	if len(key) == 0 {
+		return nil, errors.New("no key provided")
+	}
+
 	var value []byte
 	err := s.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
@@ -87,6 +92,14 @@ func (s *Store) Fetch(ctx context.Context, key []byte) ([]byte, error) {
 func (s *Store) Store(ctx context.Context, key []byte, value []byte) error {
 	span, _ := opentracing.StartSpanFromContext(ctx, "storage.badger.Store")
 	defer span.Finish()
+
+	if len(key) == 0 {
+		return errors.New("no key provided")
+	}
+
+	if len(value) == 0 {
+		return errors.New("no value provided")
+	}
 
 	return s.db.Update(func(txn *badger.Txn) error {
 		return txn.Set(key, value)

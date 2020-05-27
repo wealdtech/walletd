@@ -11,14 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package lister_test
+package signer_test
 
 import (
 	context "context"
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
 	e2types "github.com/wealdtech/go-eth2-types/v2"
@@ -27,12 +26,14 @@ import (
 	scratch "github.com/wealdtech/go-eth2-wallet-store-scratch"
 	e2wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
 	"github.com/wealdtech/walletd/core"
-	"github.com/wealdtech/walletd/handlers/lister"
+	"github.com/wealdtech/walletd/handlers/grpc/signer"
 	"github.com/wealdtech/walletd/interceptors"
-	"github.com/wealdtech/walletd/services/checker/mock"
+	autounlocker "github.com/wealdtech/walletd/services/autounlocker/keys"
+	mockchecker "github.com/wealdtech/walletd/services/checker/mock"
 	"github.com/wealdtech/walletd/services/fetcher/memfetcher"
 	"github.com/wealdtech/walletd/services/locker"
 	"github.com/wealdtech/walletd/services/ruler/lua"
+	signersvc "github.com/wealdtech/walletd/services/signer"
 	"github.com/wealdtech/walletd/services/storage/mem"
 )
 
@@ -43,64 +44,28 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestListAccounts(t *testing.T) {
+func TestSign(t *testing.T) {
 	tests := []struct {
-		name     string
-		client   string
-		paths    []string
-		err      string
-		accounts []string
+		name    string
+		client  string
+		account string
+		data    []byte
+		domain  []byte
+		state   pb.ResponseState
+		err     string
 	}{
 		{
-			name:   "Missing",
-			client: "Valid client",
-			paths:  []string{},
-		},
-		{
 			name:   "Empty",
-			client: "Valid client",
-			paths:  []string{""},
+			client: "client1",
+			state:  pb.ResponseState_DENIED,
 		},
 		{
-			name:   "NoWallet",
-			client: "Valid client",
-			paths:  []string{"/Account"},
-		},
-		{
-			name:     "UnknownWallet",
-			client:   "Valid client",
-			paths:    []string{"Unknown/.*"},
-			accounts: []string{},
-		},
-		{
-			name:     "UnknownPath",
-			client:   "Valid client",
-			paths:    []string{"Wallet 1/nothinghere"},
-			accounts: []string{},
-		},
-		{
-			name:     "BadPath",
-			client:   "Valid client",
-			paths:    []string{"Wallet 1/.***"},
-			accounts: []string{},
-		},
-		{
-			name:     "All",
-			client:   "Valid client",
-			paths:    []string{"Wallet 1"},
-			accounts: []string{"Account 1", "Account 2", "Account 3", "Account 4", "A different account"},
-		},
-		{
-			name:     "DeniedClient",
-			client:   "Deny this client",
-			paths:    []string{"Wallet 1"},
-			accounts: []string{},
-		},
-		{
-			name:     "Subset",
-			client:   "Valid client",
-			paths:    []string{"Wallet 1/Account [0-9]+"},
-			accounts: []string{"Account 1", "Account 2", "Account 3", "Account 4"},
+			name:    "Good",
+			client:  "client1",
+			account: "Wallet 1/Account 1",
+			data:    []byte("Hello, world"),
+			domain:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+			state:   pb.ResponseState_SUCCEEDED,
 		},
 	}
 
@@ -109,23 +74,28 @@ func TestListAccounts(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req := &pb.ListAccountsRequest{Paths: test.paths}
+			req := &pb.SignRequest{
+				Id: &pb.SignRequest_Account{
+					Account: test.account,
+				},
+				Data:   test.data,
+				Domain: test.domain,
+			}
 			ctx := context.WithValue(context.Background(), &interceptors.ClientName{}, test.client)
-			resp, err := handler.ListAccounts(ctx, req)
+			resp, err := handler.Sign(ctx, req)
 			if test.err == "" {
-				// Result expected.
-				require.Nil(t, err)
-				assert.Equal(t, len(test.accounts), len(resp.Accounts))
+				require.NoError(t, err)
+				require.Equal(t, resp.State, test.state)
+				// TODO manually calculate signature and confirm.
 			} else {
-				// Error expected.
-				require.NotNil(t, err)
-				assert.Equal(t, test.err, err.Error())
+				require.EqualError(t, err, test.err)
 			}
 		})
 	}
 }
 
-func Setup() (*lister.Handler, error) {
+// Setup sets up a test signer handler.
+func Setup() (*signer.Handler, error) {
 	// Create a test lister handler.
 	store := scratch.New()
 	encryptor := keystorev4.New()
@@ -170,10 +140,23 @@ func Setup() (*lister.Handler, error) {
 		return nil, err
 	}
 
-	checker, err := mock.New()
+	keysConfig := &core.KeysConfig{
+		Keys: []string{"Account 1 passphrase"},
+	}
+	unlocker, err := autounlocker.New(context.Background(), keysConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	return lister.New(checker, fetcher, ruler), nil
+	checker, err := mockchecker.New()
+	if err != nil {
+		return nil, err
+	}
+
+	signerSvc, err := signersvc.New(unlocker, checker, fetcher, ruler)
+	if err != nil {
+		return nil, err
+	}
+
+	return signer.New(signerSvc), nil
 }

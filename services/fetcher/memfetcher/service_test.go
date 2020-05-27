@@ -93,6 +93,10 @@ func TestFetchWallet(t *testing.T) {
 			name: "Good",
 			path: "Test wallet",
 		},
+		{
+			name: "HDGood",
+			path: "Test HD wallet",
+		},
 	}
 
 	for _, test := range tests {
@@ -145,6 +149,10 @@ func TestFetchAccount(t *testing.T) {
 			name: "Good",
 			path: "Test wallet/Test account",
 		},
+		{
+			name: "HDGood",
+			path: "Test HD wallet/Test account",
+		},
 	}
 
 	for _, test := range tests {
@@ -179,6 +187,11 @@ func TestFetchAccountByKey(t *testing.T) {
 	account, err := wallet.AccountByName("Test account")
 	require.Nil(t, err)
 
+	hdWallet, err := e2wallet.OpenWallet("Test HD wallet", e2wallet.WithStore(stores[0]))
+	require.Nil(t, err)
+	hdAccount, err := hdWallet.AccountByName("Test account")
+	require.Nil(t, err)
+
 	tests := []struct {
 		name string
 		key  []byte
@@ -201,6 +214,10 @@ func TestFetchAccountByKey(t *testing.T) {
 		{
 			name: "Good",
 			key:  account.PublicKey().Marshal(),
+		},
+		{
+			name: "HDGood",
+			key:  hdAccount.PublicKey().Marshal(),
 		},
 	}
 
@@ -282,5 +299,24 @@ func createTestStores() ([]e2wtypes.Store, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	walletID = uuid.New()
+	err = store.StoreWallet(walletID, "Test HD wallet", []byte(fmt.Sprintf(`{"crypto":{"checksum":{"function":"sha256","message":"2f56b0b5338c5afed07f88698686bb214c6fb42b9c1a812dc2f15e58aedec18c","params":{}},"cipher":{"function":"aes-128-ctr","message":"172821d450d10846b1f033d3955c500f1e2ae01304363abb6ad7fcc7e5020b37","params":{"iv":"66cafd4641b91f3e31d5dcc768ddb641"}},"kdf":{"function":"pbkdf2","message":"","params":{"c":16,"dklen":32,"prf":"hmac-sha256","salt":"45e396e8375da8a410ad992bee063bfe68c8084aa290b58e8408de05bd01ca82"}}},"name":"Test HD wallet","nextaccount":0,"type":"hierarchical deterministic","uuid":"%s","version":1}`, walletID.String())))
+	if err != nil {
+		return nil, err
+	}
+	wallet, err = e2wallet.OpenWallet("Test HD wallet", e2wallet.WithStore(store))
+	if err != nil {
+		return nil, err
+	}
+	err = wallet.Unlock([]byte("secret"))
+	if err != nil {
+		return nil, err
+	}
+	_, err = wallet.CreateAccount("Test account", []byte{})
+	if err != nil {
+		return nil, err
+	}
+
 	return []e2wtypes.Store{store}, nil
 }

@@ -27,7 +27,7 @@ import (
 	"github.com/wealdtech/walletd/util"
 )
 
-// ListAccounts lists accouts.
+// ListAccounts lists accounts.
 func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest) (*pb.ListAccountsResponse, error) {
 	log.Info().Strs("paths", req.GetPaths()).Msg("List accounts request received")
 	res := &pb.ListAccountsResponse{}
@@ -37,7 +37,7 @@ func (h *Handler) ListAccounts(ctx context.Context, req *pb.ListAccountsRequest)
 		log := log.With().Str("path", path).Logger()
 		walletName, accountPath, err := util.WalletAndAccountNamesFromPath(path)
 		if err != nil {
-			log.Info().Err(err).Msg("Failed to obtain wallet and accout names from path")
+			log.Info().Err(err).Msg("Failed to obtain wallet and account names from path")
 			continue
 		}
 		if walletName == "" {

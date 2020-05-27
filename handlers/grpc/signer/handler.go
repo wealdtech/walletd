@@ -11,15 +11,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package golang
+package signer
 
 import (
-	"context"
-
-	"github.com/wealdtech/walletd/core"
-	"github.com/wealdtech/walletd/services/ruler"
+	signersvc "github.com/wealdtech/walletd/services/signer"
 )
 
-func (s *Service) runListAccountsRule(ctx context.Context, metadata *reqMetadata, req *ruler.AccessAccountData) core.RulesResult {
-	return core.APPROVED
+// Handler is the signer handler, allowing access to signer functions through grpc.
+type Handler struct {
+	signer *signersvc.Service
+}
+
+// New creates a new signer handler.
+func New(signer *signersvc.Service) *Handler {
+	return &Handler{
+		signer: signer,
+	}
 }

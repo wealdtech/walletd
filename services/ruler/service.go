@@ -30,6 +30,42 @@ var (
 	ActionAccessAccount = "Access account"
 )
 
+// SignData is passed to 'Sign' ruler requests.
+type SignData struct {
+	Domain []byte
+	Data   []byte
+}
+
+// SignBeaconAttestationData is passed to 'SignBeaconAttestation' ruler requests.
+type SignBeaconAttestationData struct {
+	Domain          []byte
+	Slot            uint64
+	CommitteeIndex  uint64
+	BeaconBlockRoot []byte
+	Source          *Checkpoint
+	Target          *Checkpoint
+}
+
+// Checkpoint is part of SignBeaconAttestationData.
+type Checkpoint struct {
+	Epoch uint64
+	Root  []byte
+}
+
+// SignBeaconProposalData is passed to 'SignBeaconProposal' ruler requests.
+type SignBeaconProposalData struct {
+	Domain        []byte
+	Slot          uint64
+	ProposerIndex uint64
+	ParentRoot    []byte
+	StateRoot     []byte
+	BodyRoot      []byte
+}
+
+// AccessAccountData is passed to 'AccessAccount' ruler requests.
+type AccessAccountData struct {
+}
+
 // Service provides an interface to check requests against a rules engine.
 type Service interface {
 	// RunRules runs a set of rules for the given information.

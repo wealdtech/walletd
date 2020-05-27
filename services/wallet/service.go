@@ -32,10 +32,10 @@ import (
 	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
 	e2wtypes "github.com/wealdtech/go-eth2-wallet-types/v2"
 	"github.com/wealdtech/walletd/core"
-	"github.com/wealdtech/walletd/handlers/accountmanager"
-	"github.com/wealdtech/walletd/handlers/lister"
-	"github.com/wealdtech/walletd/handlers/signer"
-	"github.com/wealdtech/walletd/handlers/walletmanager"
+	"github.com/wealdtech/walletd/handlers/grpc/accountmanager"
+	"github.com/wealdtech/walletd/handlers/grpc/lister"
+	signerhandler "github.com/wealdtech/walletd/handlers/grpc/signer"
+	"github.com/wealdtech/walletd/handlers/grpc/walletmanager"
 	"github.com/wealdtech/walletd/interceptors"
 	"github.com/wealdtech/walletd/services/autounlocker"
 	"github.com/wealdtech/walletd/services/checker"
@@ -44,6 +44,7 @@ import (
 	"github.com/wealdtech/walletd/services/ruler"
 	"github.com/wealdtech/walletd/services/ruler/golang"
 	"github.com/wealdtech/walletd/services/ruler/lua"
+	signersvc "github.com/wealdtech/walletd/services/signer"
 	"github.com/wealdtech/walletd/services/storage/badger"
 	"github.com/wealdtech/walletd/util"
 	"google.golang.org/grpc"
@@ -106,10 +107,15 @@ func (s *Service) ServeGRPC(ctx context.Context, config *core.ServerConfig) erro
 		return err
 	}
 
+	signerSvc, err := signersvc.New(s.autounlocker, s.checker, fetcher, ruler)
+	if err != nil {
+		return err
+	}
+
 	pb.RegisterWalletManagerServer(s.grpcServer, walletmanager.New(fetcher, ruler))
 	pb.RegisterAccountManagerServer(s.grpcServer, accountmanager.New(fetcher, ruler))
 	pb.RegisterListerServer(s.grpcServer, lister.New(s.checker, fetcher, ruler))
-	pb.RegisterSignerServer(s.grpcServer, signer.New(s.autounlocker, s.checker, fetcher, ruler))
+	pb.RegisterSignerServer(s.grpcServer, signerhandler.New(signerSvc))
 
 	err = s.Serve(config)
 	if err != nil {

@@ -11,15 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package golang
+package signer
 
-import (
-	"context"
+import zerologger "github.com/rs/zerolog/log"
 
-	"github.com/wealdtech/walletd/core"
-	"github.com/wealdtech/walletd/services/ruler"
-)
-
-func (s *Service) runListAccountsRule(ctx context.Context, metadata *reqMetadata, req *ruler.AccessAccountData) core.RulesResult {
-	return core.APPROVED
-}
+var log = zerologger.With().Str("module", "signer").Logger()

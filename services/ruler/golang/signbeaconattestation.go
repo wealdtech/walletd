@@ -17,11 +17,11 @@ import (
 	"context"
 
 	"github.com/opentracing/opentracing-go"
-	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
 	"github.com/wealdtech/walletd/core"
+	"github.com/wealdtech/walletd/services/ruler"
 )
 
-func (s *Service) runSignBeaconAttestationRule(ctx context.Context, metadata *reqMetadata, req *pb.SignBeaconAttestationRequest) core.RulesResult {
+func (s *Service) runSignBeaconAttestationRule(ctx context.Context, metadata *reqMetadata, req *ruler.SignBeaconAttestationData) core.RulesResult {
 	span, _ := opentracing.StartSpanFromContext(ctx, "ruler.golang.runSignBeaconAttestationRule")
 	defer span.Finish()
 

@@ -11,15 +11,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package golang
+package signer
 
 import (
-	"context"
+	context "context"
 
-	"github.com/wealdtech/walletd/core"
-	"github.com/wealdtech/walletd/services/ruler"
+	"github.com/wealdtech/walletd/interceptors"
+	"github.com/wealdtech/walletd/services/checker"
 )
 
-func (s *Service) runListAccountsRule(ctx context.Context, metadata *reqMetadata, req *ruler.AccessAccountData) core.RulesResult {
-	return core.APPROVED
+// generateCredentials generates credentials from the request information.
+func (h *Handler) generateCredentials(ctx context.Context) *checker.Credentials {
+	res := &checker.Credentials{}
+
+	if client, ok := ctx.Value(&interceptors.ClientName{}).(string); ok {
+		res.Client = client
+	}
+	return res
 }

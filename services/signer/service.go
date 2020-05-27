@@ -14,14 +14,16 @@
 package signer
 
 import (
+	"errors"
+
 	"github.com/wealdtech/walletd/services/autounlocker"
 	"github.com/wealdtech/walletd/services/checker"
 	"github.com/wealdtech/walletd/services/fetcher"
 	"github.com/wealdtech/walletd/services/ruler"
 )
 
-// Handler is the signer handler.
-type Handler struct {
+// Service is the signer handler.
+type Service struct {
 	checker      checker.Service
 	fetcher      fetcher.Service
 	ruler        ruler.Service
@@ -29,11 +31,24 @@ type Handler struct {
 }
 
 // New creates a new signer handler.
-func New(autounlocker autounlocker.Service, checker checker.Service, fetcher fetcher.Service, ruler ruler.Service) *Handler {
-	return &Handler{
-		autounlocker: autounlocker,
+func New(unlocker autounlocker.Service, checker checker.Service, fetcher fetcher.Service, ruler ruler.Service) (*Service, error) {
+	if unlocker == nil {
+		return nil, errors.New("no unlocker provided")
+	}
+	if checker == nil {
+		return nil, errors.New("no checker provided")
+	}
+	if fetcher == nil {
+		return nil, errors.New("no fetcher provided")
+	}
+	if ruler == nil {
+		return nil, errors.New("no ruler provided")
+	}
+
+	return &Service{
+		autounlocker: unlocker,
 		checker:      checker,
 		fetcher:      fetcher,
 		ruler:        ruler,
-	}
+	}, nil
 }

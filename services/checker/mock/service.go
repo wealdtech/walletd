@@ -30,5 +30,8 @@ func New() (*MockChecker, error) {
 
 // Check returns true.
 func (c *MockChecker) Check(ctx context.Context, credentials *checker.Credentials, account string, operation string) bool {
+	if credentials == nil {
+		return false
+	}
 	return !(strings.HasPrefix(credentials.Client, "Deny") || strings.Contains(account, "/Deny"))
 }

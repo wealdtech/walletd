@@ -161,10 +161,13 @@ func (s *Service) FetchAccountByKey(pubKey []byte) (e2wtypes.Wallet, e2wtypes.Ac
 
 func walletFromBytes(data []byte, store e2wtypes.Store, encryptor e2wtypes.Encryptor) (e2wtypes.Wallet, error) {
 	if store == nil {
-		return nil, errors.New("no store specified")
+		return nil, errors.New("no store provided")
 	}
 	if encryptor == nil {
-		return nil, errors.New("no encryptor specified")
+		return nil, errors.New("no encryptor provided")
+	}
+	if data == nil {
+		return nil, errors.New("no data provided")
 	}
 
 	type walletInfo struct {
