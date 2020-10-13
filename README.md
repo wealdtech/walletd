@@ -7,6 +7,10 @@
 [![codecov.io](https://img.shields.io/codecov/c/github/wealdtech/walletd.svg)](https://codecov.io/github/wealdtech/walletd)
 [![Go Report Card](https://goreportcard.com/badge/github.com/wealdtech/walletd)](https://goreportcard.com/report/github.com/wealdtech/walletd)
 
+
+**This project has been superseded by [Dirk](https://github.com/attestantio/dirk) and is no longer supported.**
+
+
 Daemon for accessing Ethereum 2 wallets and allowing protected signing operations to take place.
 
 ## Table of Contents
